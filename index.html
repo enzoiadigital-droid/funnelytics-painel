@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Funnelytics</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c5cff'/%3E%3Cpath d='M7 9h18l-7 8v6l-4 2v-8z' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#090b10; --side:#0d1017; --card:#12161f; --card2:#171c27; --hover:#1c2230;
+  --line:#222938; --line2:#2c3446;
+  --tx:#eef1f7; --tx2:#a3acc0; --tx3:#6d7790;
+  --ac:#7c5cff; --ac-soft:rgba(124,92,255,.14); --ac-tx:#b8a8ff; --ac2:#22d3ee;
+  --ok:#34d399; --ok-soft:rgba(52,211,153,.13); --bad:#f87171; --bad-soft:rgba(248,113,113,.13);
+  --warn:#fbbf24; --warn-soft:rgba(251,191,36,.13);
+  --grad:linear-gradient(90deg,#7c5cff,#22d3ee);
+  --r:14px; --side-w:248px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+code{font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace}
+.num{font-variant-numeric:tabular-nums}
+
+/* ===== layout ===== */
+.shell{display:flex;min-height:100vh}
+aside{width:var(--side-w);flex:none;background:var(--side);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;z-index:30}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:18px 18px 14px;font-weight:800;font-size:16.5px;letter-spacing:-.02em}
+.brand i{width:28px;height:28px;border-radius:8px;background:var(--grad);display:grid;place-items:center;flex:none}
+.brand i svg{width:16px;height:16px}
+.nav{flex:1;overflow-y:auto;padding:4px 10px 10px}
+.nav a,.nav button.it{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border-radius:9px;color:var(--tx2);font-weight:500;border:0;background:none;text-align:left}
+.nav a:hover,.nav button.it:hover{background:var(--hover);color:var(--tx)}
+.nav a.on{background:var(--ac-soft);color:var(--tx)}
+.nav a .ic{width:18px;text-align:center;opacity:.85;flex:none}
+.nav .grp{margin:16px 10px 6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);display:flex;justify-content:space-between}
+.nav .fn{padding-left:12px}
+.nav .fn span.t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--line2);flex:none}
+.dot.live{background:var(--ok);box-shadow:0 0 0 3px rgba(52,211,153,.18)}
+.nav .vazio{padding:4px 12px;font-size:12.5px;color:var(--tx3)}
+.side-foot{border-top:1px solid var(--line);padding:10px}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:12px 24px;background:rgba(9,11,16,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.crumb{min-width:0;color:var(--tx2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--tx);font-weight:600}
+.sp{flex:1}
+.burger{display:none;background:none;border:1px solid var(--line2);border-radius:9px;width:36px;height:36px;font-size:17px}
+.content{padding:22px 24px 60px;max-width:1280px;width:100%}
+.veil{display:none}
+
+/* ===== período ===== */
+.per{display:flex;align-items:center;gap:6px;position:relative}
+.seg{display:flex;background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:3px;gap:2px}
+.seg button{background:none;border:0;padding:5px 10px;border-radius:7px;color:var(--tx2);font-weight:500;white-space:nowrap;font-size:13px}
+.seg button:hover{color:var(--tx)}
+.seg button.on{background:var(--ac);color:#fff}
+.icbtn{background:var(--card);border:1px solid var(--line2);border-radius:10px;height:34px;min-width:34px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--tx2)}
+.icbtn:hover{color:var(--tx);border-color:var(--tx3)}
+.icbtn.spin svg{animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.pop{position:absolute;right:0;top:42px;background:var(--card2);border:1px solid var(--line2);border-radius:12px;padding:14px;display:none;gap:10px;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.5);z-index:40;min-width:250px}
+.pop.on{display:flex}
+.pop label{display:grid;gap:4px;font-size:12px;color:var(--tx2);font-weight:600}
+.atual{font-size:12px;color:var(--tx3);white-space:nowrap}
+
+/* ===== elementos ===== */
+h1{font-size:24px;letter-spacing:-.03em;margin:0;font-weight:800}
+h2{font-size:15px;margin:0;font-weight:700;letter-spacing:-.01em}
+.ph{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.ph .t{flex:1;min-width:220px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ac2);margin-bottom:4px}
+.sub{color:var(--tx2);margin-top:4px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.card-h .sp{flex:1}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1.2fr 1fr}
+.g2e{grid-template-columns:1fr 1fr}
+@media(max-width:1000px){.g2,.g2e{grid-template-columns:1fr}}
+.mt{margin-top:14px}
+.muted{color:var(--tx2)} .tiny{font-size:12px;color:var(--tx3)}
+.btn{background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:8px 14px;font-weight:600;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:hover{border-color:var(--tx3)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.pri:hover{filter:brightness(1.1)}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.btn.ghost{background:none;border-color:transparent;color:var(--tx2)}
+.btn.ghost:hover{color:var(--tx);background:var(--hover)}
+.btn.bad{color:var(--bad)}
+.btn[disabled]{opacity:.35;pointer-events:none}
+.lk{color:var(--ac-tx);font-weight:600;background:none;border:0;padding:0}
+.lk:hover{text-decoration:underline}
+input[type=text],input[type=url],input[type=password],input[type=date],select{background:var(--bg);border:1px solid var(--line2);border-radius:9px;padding:8px 10px;outline:none;min-width:0;width:100%}
+input:focus,select:focus{border-color:var(--ac)}
+input[type=date]{color-scheme:dark}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--card2);color:var(--tx2);white-space:nowrap}
+.pill.ok,.pill.aprovada{background:var(--ok-soft);color:var(--ok)}
+.pill.bad,.pill.reembolsada,.pill.chargeback,.pill.disputa{background:var(--bad-soft);color:var(--bad)}
+.pill.warn,.pill.aguardando,.pill.atrasada{background:var(--warn-soft);color:var(--warn)}
+.pill .dot{width:6px;height:6px}
+
+/* KPIs */
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:14px}
+.kpi{padding:15px 16px}
+.kpi .l{color:var(--tx2);font-size:12.5px;font-weight:600}
+.kpi .v{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:6px;line-height:1.1}
+.kpi .d{font-size:12px;color:var(--tx3);margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.kpi.hl{background:linear-gradient(160deg,rgba(124,92,255,.16),var(--card) 60%);border-color:rgba(124,92,255,.35)}
+.dl{font-weight:700;font-size:12px;padding:1px 6px;border-radius:6px}
+.dl.up{color:var(--ok);background:var(--ok-soft)} .dl.down{color:var(--bad);background:var(--bad-soft)} .dl.eq{color:var(--tx3);background:var(--card2)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.tabs::-webkit-scrollbar,.per::-webkit-scrollbar{display:none}
+.bc{width:100%}
+.tabs a{padding:10px 14px;color:var(--tx2);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs a:hover{color:var(--tx)}
+.tabs a.on{color:var(--tx);border-color:var(--ac)}
+.filtros{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:-6px 0 16px}
+.chip{background:var(--ac-soft);border:1px solid rgba(124,92,255,.4);border-radius:999px;padding:4px 6px 4px 11px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center;max-width:100%}
+.chip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px}
+.chip button{background:none;border:0;color:var(--tx2);padding:0 4px;font-size:15px;line-height:1}
+
+/* funil */
+.fun{display:grid;grid-template-columns:minmax(110px,170px) 1fr 64px;column-gap:14px;align-items:center}
+.fun.largo{grid-template-columns:minmax(140px,300px) 1fr 64px}
+.fun .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.fun .n small{display:block;color:var(--tx3);font-weight:400;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.fun .p{text-align:right;color:var(--tx2);font-size:12.5px;font-weight:600}
+.bar{position:relative;height:34px;background:var(--bg);border-radius:8px;overflow:hidden}
+.bar b{position:absolute;inset:0 auto 0 0;background:var(--grad);border-radius:8px;min-width:3px;transition:width .5s}
+.bar.sale b{background:linear-gradient(90deg,#10b981,#34d399)}
+.bar span{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;font-size:13px;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.fun .gap{grid-column:2 / 4;font-size:12px;color:var(--tx3);padding:6px 0 6px 12px;margin-left:12px;border-left:2px dashed var(--line2)}
+.fun .gap .s{color:var(--ok);font-weight:700}.fun .gap .q{color:var(--bad);font-weight:600}
+.fun .gap.pior{border-left-color:var(--bad)}
+.fun .sep{grid-column:1}
+@media(max-width:600px){.fun,.fun.largo{grid-template-columns:96px 1fr 52px;column-gap:10px}}
+
+/* tabelas */
+.tbl{overflow-x:auto;margin:0 -18px;padding:0 18px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.tbl::-webkit-scrollbar{height:6px}.tbl::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);font-weight:600;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.s{cursor:pointer;user-select:none} th.s:hover{color:var(--tx)} th.s.on{color:var(--ac-tx)}
+td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+th.l,td.l{text-align:left}
+td.nm{white-space:normal;min-width:180px;max-width:420px}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--hover)}
+tr.bump td{padding-top:0;color:var(--tx2);font-size:13px}
+.cv{display:inline-block;min-width:56px;padding:2px 8px;border-radius:999px;background:var(--ac-soft);color:var(--ac-tx);font-weight:700;font-size:12.5px;text-align:center}
+.cv.top{background:var(--ok-soft);color:var(--ok)}
+.mbar{display:inline-block;width:60px;height:6px;border-radius:3px;background:var(--bg);vertical-align:middle;margin-left:8px;overflow:hidden}
+.mbar i{display:block;height:100%;background:var(--ac);border-radius:3px}
+
+/* gráficos */
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .ct{font-size:12.5px;color:var(--tx2);font-weight:600;margin:2px 0 6px;display:flex;justify-content:space-between}
+.chart .ct b{color:var(--tx)}
+.tip{position:fixed;pointer-events:none;background:#1f2533;border:1px solid var(--line2);border-radius:8px;padding:7px 10px;font-size:12.5px;white-space:pre-line;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.45);display:none;max-width:280px}
+.spark{display:block}
+
+/* lista de funis */
+.ft td.nm a{font-weight:600}
+.ft td.nm small{display:block;color:var(--tx3);font-size:12px;font-weight:400}
+.ft .op td{background:transparent;color:var(--tx3);font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding-top:18px;text-align:left}
+
+/* config */
+.etp{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid var(--line)}
+.etp:last-of-type{border-bottom:0}
+.etp .nº{width:32px;height:32px;border-radius:9px;background:var(--card2);display:grid;place-items:center;font-weight:800;color:var(--ac2)}
+.code{display:flex;gap:6px;align-items:center;margin-top:8px}
+.code code{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:#c4b5fd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.form{display:grid;gap:12px}
+.form label{display:grid;gap:5px;font-size:12.5px;color:var(--tx2);font-weight:600}
+.form label.ck{display:flex;gap:9px;align-items:flex-start;font-weight:500;color:var(--tx)}
+.form label.ck input{margin-top:3px}
+.etl{display:grid;gap:8px}
+.etl div{display:grid;grid-template-columns:22px 1fr 1.3fr 30px;gap:8px;align-items:center}
+.etl div span{color:var(--tx3);font-weight:700;text-align:center}
+@media(max-width:600px){.etl div{grid-template-columns:20px 1fr 30px}.etl div input[type=url]{grid-column:2}}
+.step{display:flex;gap:12px;margin:12px 0;color:var(--tx2)}.step>b{flex:none;width:24px;height:24px;border-radius:50%;background:var(--card2);display:grid;place-items:center;color:var(--ac2);font-size:12px}
+dialog{background:var(--card);color:var(--tx);border:1px solid var(--line2);border-radius:16px;padding:22px;width:min(620px,calc(100vw - 32px));box-shadow:0 30px 80px rgba(0,0,0,.6)}
+dialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(3px)}
+dialog h2{margin-bottom:16px;font-size:17px}
+.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line2);padding:10px 16px;border-radius:10px;z-index:70;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast.err{border-color:var(--bad);color:var(--bad)}
+.empty{text-align:center;padding:40px 20px;color:var(--tx2)}
+.empty b{display:block;color:var(--tx);font-size:16px;margin-bottom:6px}
+.erro{border-color:rgba(248,113,113,.4)}
+.sk{background:linear-gradient(90deg,var(--card) 0,var(--card2) 50%,var(--card) 100%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:var(--r);border:1px solid var(--line)}
+@keyframes sk{to{background-position:-200% 0}}
+.dim{opacity:.6;transition:opacity .2s}
+.login{max-width:400px;margin:14vh auto;padding:0 16px;text-align:center}
+.login .brand{justify-content:center;font-size:24px}
+
+/* celular */
+@media(max-width:860px){
+  aside{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .2s;box-shadow:20px 0 50px rgba(0,0,0,.5)}
+  body.menu aside{transform:none}
+  body.menu .veil{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:25}
+  .burger{display:grid;place-items:center}
+  .topbar{padding:10px 16px;flex-wrap:wrap;row-gap:10px}
+  .topbar .sp{display:none}
+  .crumb{flex:1}
+  .per{order:3;width:100%;overflow-x:auto}
+  .content{padding:18px 16px 50px}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi .v{font-size:21px}
+  .atual{display:none}
+  .pop{right:auto;left:0}
+}
+</style>
+</head>
+<body>
+<div id="raiz"></div>
+<div class="tip" id="tip"></div>
+<dialog id="dlg"></dialog>
+
+<script>
+const API = 'https://fllhjovsewrjjrvvyzcz.supabase.co';
+const KEY = 'sb_publishable_rAIcCcmMXLQsakKWyCtxFQ_cFbtYk4T';
+const SCRIPT = e => `<script src="${API}/functions/v1/f?e=${e.id}${e.passos ? '&passos=1' : ''}" async><\/script>`;
+const WEBHOOK = k => `${API}/functions/v1/hotmart?k=${k}`;
+const LOGO = '<i><svg viewBox="0 0 32 32"><path d="M6 8h20l-8 9v7l-4 2v-9z" fill="#fff"/></svg></i>';
+const IC_REF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>';
+const IC_CAL = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>';
+
+// ===== utilidades =====
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const nf = new Intl.NumberFormat('pt-BR');
+const brl = new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'});
+const n = v => nf.format(Number(v || 0));
+const pct = v => v == null || isNaN(v) ? '—' : Number(v).toLocaleString('pt-BR', {maximumFractionDigits: Number(v) < 10 ? 2 : 1}) + '%';
+const money = v => brl.format(Number(v || 0));
+const ls = {get: k => { try { return localStorage.getItem(k); } catch { return null; } },
+            set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+            del: k => { try { localStorage.removeItem(k); } catch {} }};
+// nomes da Utmify vêm como "AD107|120252859749740205": mostra só o nome
+const limpa = s => String(s ?? '').replace(/\|\d{6,}$/, '');
+const CAMPOS = [['utm_source', 'Origem'], ['utm_campaign', 'Campanha'], ['utm_medium', 'Conjunto'], ['utm_content', 'Anúncio'], ['utm_term', 'Posicionamento']];
+const nomeCampo = c => (CAMPOS.find(x => x[0] === c) || [c, c])[1];
+const ATR = {sck: 'id do visitante', email: 'e-mail do lead', utmify: 'UTM da Utmify', produto: 'produto do funil', conta: 'conta Hotmart'};
+const STATUS = {aprovada: 'aprovada', reembolsada: 'reembolsada', chargeback: 'chargeback', disputa: 'em disputa', aguardando: 'aguardando', atrasada: 'atrasada', cancelada: 'cancelada', expirada: 'expirada'};
+const quando = t => t ? new Date(t).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}) : '—';
+function haQuanto(t) {
+  if (!t) return null;
+  const s = (Date.now() - new Date(t)) / 1000;
+  if (s < 60) return 'agora';
+  if (s < 3600) return `há ${Math.floor(s / 60)} min`;
+  if (s < 86400) return `há ${Math.floor(s / 3600)} h`;
+  return `há ${Math.floor(s / 86400)} d`;
+}
+const aoVivo = t => t && (Date.now() - new Date(t)) < 15 * 60e3;
+function toast(t, err) { const d = document.createElement('div'); d.className = 'toast' + (err ? ' err' : ''); d.textContent = t; document.body.append(d); setTimeout(() => d.remove(), 2600); }
+async function copiar(t) { try { await navigator.clipboard.writeText(t); toast('Copiado ✓'); } catch { prompt('Copie:', t); } }
+function delta(cur, ant, inverso) {
+  cur = Number(cur || 0); ant = Number(ant || 0);
+  if (!ant && !cur) return '';
+  if (!ant) return `<span class="dl up" title="no período anterior era 0">novo</span>`;
+  const p = 100 * (cur - ant) / ant;
+  if (Math.abs(p) < 0.5) return `<span class="dl eq">= 0%</span>`;
+  const bom = inverso ? p < 0 : p > 0;
+  return `<span class="dl ${bom ? 'up' : 'down'}">${p > 0 ? '▲' : '▼'} ${Math.abs(p).toLocaleString('pt-BR', {maximumFractionDigits: 0})}%</span>`;
+}
+
+// ===== estado =====
+let CHAVE = null, INI = null, ATUALIZADO = null;
+const st = {per: ls.get('fy_per') || '7', de: null, ate: null, campo: ls.get('fy_campo') || 'utm_content', filtro: {}, funil: null, ordem: {col: 'vendas', dir: -1}, statusV: 'todas'};
+const cache = new Map();
+
+function chaveDoLink() {
+  const m = location.hash.match(/[#&]k=([a-z0-9]{20,})/);
+  if (m) { ls.set('fy_chave', m[1]); history.replaceState(null, '', location.pathname + '#/'); }
+  CHAVE = ls.get('fy_chave') || (m && m[1]);
+  return !!m;
+}
+chaveDoLink();
+
+async function post(fn, args) {
+  const r = await fetch(API + '/rest/v1/rpc/' + fn, {method: 'POST', headers: {apikey: KEY, 'Content-Type': 'application/json'}, body: JSON.stringify(args)});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    if (j.code === '28000') { ls.del('fy_chave'); CHAVE = null; telaLogin('Chave inválida.'); throw new Error('chave'); }
+    throw new Error(j.message || 'Erro ' + r.status);
+  }
+  return j;
+}
+const rpc = (acao, dados = {}) => post('painel', {p_chave: CHAVE, p_acao: acao, p_dados: dados});
+async function rpcCache(acao, dados) {
+  const k = acao + JSON.stringify(dados);
+  if (!cache.has(k)) cache.set(k, rpc(acao, dados).catch(e => { cache.delete(k); throw e; }));
+  return cache.get(k);
+}
+
+// ===== período =====
+function hojeBR() { return new Date(new Date().toLocaleString('en-US', {timeZone: 'America/Sao_Paulo'})); }
+const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const PERIODOS = [['hoje', 'Hoje'], ['ontem', 'Ontem'], ['7', '7 dias'], ['30', '30 dias'], ['mes', 'Este mês']];
+function aplicaPer() {
+  if (st.per === 'custom' && st.de) return;
+  if (!PERIODOS.some(p => p[0] === st.per)) st.per = st.per === '0' ? 'hoje' : '7';   // valores do painel antigo
+  const h = hojeBR(); let de = new Date(h), ate = new Date(h);
+  if (st.per === 'ontem') { de.setDate(h.getDate() - 1); ate = new Date(de); }
+  else if (st.per === 'mes') de = new Date(h.getFullYear(), h.getMonth(), 1);
+  else if (st.per !== 'hoje') de.setDate(h.getDate() - (Number(st.per) - 1));
+  st.de = iso(de); st.ate = iso(ate);
+}
+const fdia = s => s.split('-').reverse().slice(0, 2).join('/');
+function periodoTxt() {
+  const p = PERIODOS.find(x => x[0] === st.per);
+  const datas = st.de === st.ate ? fdia(st.de) : `${fdia(st.de)} – ${fdia(st.ate)}`;
+  return p ? `${p[1]} · ${datas}` : datas;
+}
+
+// ===== moldura =====
+function telaLogin(msg) {
+  $('#raiz').innerHTML = `<div class="login"><div class="brand">${LOGO}Funnelytics</div>
+    <div class="card" style="margin-top:14px;text-align:left"><p class="muted" style="margin-top:0">Cole a chave do painel ou abra o link com <code>#k=</code>.</p>
+    ${msg ? `<p style="color:var(--bad)">${esc(msg)}</p>` : ''}
+    <form id="lf" class="form"><input type="password" id="lk" placeholder="chave do painel" autocomplete="off"><button class="btn pri" style="justify-content:center">Entrar</button></form></div></div>`;
+  $('#lf').onsubmit = e => { e.preventDefault(); CHAVE = $('#lk').value.trim(); ls.set('fy_chave', CHAVE); iniciar(); };
+}
+
+function moldura() {
+  $('#raiz').innerHTML = `<div class="shell">
+    <aside id="side"></aside><div class="veil" id="veil"></div>
+    <div class="main">
+      <div class="topbar">
+        <button class="burger" id="burger" aria-label="menu">☰</button>
+        <div class="crumb" id="crumb"></div><div class="sp"></div>
+        <div class="per">
+          <div class="seg" id="seg">${PERIODOS.map(p => `<button data-p="${p[0]}">${p[1]}</button>`).join('')}</div>
+          <button class="icbtn" id="calBtn" title="Escolher datas">${IC_CAL}</button>
+          <div class="pop" id="pop">
+            <label>De<input type="date" id="de"></label><label>Até<input type="date" id="ate"></label>
+            <button class="btn pri sm" id="aplicar" style="justify-content:center">Aplicar</button>
+          </div>
+        </div>
+        <span class="atual" id="atual"></span>
+        <button class="icbtn" id="ref" title="Atualizar">${IC_REF}</button>
+      </div>
+      <div class="content" id="app"></div>
+    </div></div>`;
+  $('#seg').onclick = e => { const p = e.target.dataset.p; if (!p) return; st.per = p; ls.set('fy_per', p); aplicaPer(); syncPer(); rota(); };
+  $('#calBtn').onclick = () => { $('#de').value = st.de; $('#ate').value = st.ate; $('#pop').classList.toggle('on'); };
+  $('#aplicar').onclick = () => {
+    const de = $('#de').value, ate = $('#ate').value; if (!de || !ate) return;
+    st.per = 'custom'; st.de = de <= ate ? de : ate; st.ate = de <= ate ? ate : de; $('#pop').classList.remove('on'); syncPer(); rota();
+  };
+  document.addEventListener('click', e => { if (!e.target.closest('.per')) $('#pop')?.classList.remove('on'); });
+  $('#ref').onclick = () => atualizar(true);
+  $('#burger').onclick = () => document.body.classList.toggle('menu');
+  $('#veil').onclick = () => document.body.classList.remove('menu');
+  syncPer();
+}
+function syncPer() { $$('#seg button').forEach(b => b.classList.toggle('on', b.dataset.p === st.per)); }
+
+function lateral() {
+  const h = location.hash || '#/';
+  const porOp = INI.operacoes.map(o => ({...o, funis: INI.funis.filter(f => f.operacao === o.slug)}));
+  $('#side').innerHTML = `<div class="brand">${LOGO}Funnelytics</div>
+    <nav class="nav">
+      <a href="#/" class="${h === '#/' || h === '' ? 'on' : ''}"><span class="ic">◧</span>Visão geral</a>
+      ${porOp.map(o => `<div class="grp"><span>${esc(o.nome)}</span><span>${o.funis.length || ''}</span></div>
+        ${o.funis.length ? o.funis.map(f => `<a class="fn ${st.funil === f.id && h.startsWith('#/f/') ? 'on' : ''}" href="#/f/${f.id}" title="${esc(f.nome)}">
+          <span class="dot ${aoVivo(f.ultimo_acesso) ? 'live' : ''}"></span><span class="t">${esc(f.nome)}</span></a>`).join('')
+          : `<div class="vazio">nenhum funil</div>`}`).join('')}
+      <div style="margin-top:12px"><button class="it" id="novoF"><span class="ic">＋</span>Novo funil</button></div>
+    </nav>
+    <div class="side-foot nav">
+      <a href="#/hotmart" class="${h.startsWith('#/hotmart') ? 'on' : ''}"><span class="ic">⚡</span>Hotmart
+</a>
+      <button class="it" id="sair"><span class="ic">⎋</span>Sair</button>
+    </div>`;
+  $('#novoF').onclick = novoFunil;
+  $('#sair').onclick = () => { if (confirm('Sair do painel neste navegador?')) { ls.del('fy_chave'); CHAVE = null; telaLogin(); } };
+  $$('#side a').forEach(a => a.addEventListener('click', () => document.body.classList.remove('menu')));
+}
+function crumb(html) { $('#crumb').innerHTML = html; }
+
+async function iniciar() {
+  if (!CHAVE) return telaLogin();
+  try { INI = await rpc('inicio'); }
+  catch (e) { if (e.message !== 'chave') $('#raiz').innerHTML = `<div class="login"><div class="card erro">${esc(e.message)}<br><br><button class="btn" onclick="iniciar()">Tentar de novo</button></div></div>`; return; }
+  aplicaPer(); moldura(); rota();
+}
+async function recarregaIni() { INI = await rpc('inicio'); lateral(); }
+
+async function atualizar(forcar) {
+  if (forcar) { cache.clear(); $('#ref').classList.add('spin'); }
+  try { await recarregaIni(); await rota(true); } finally { $('#ref')?.classList.remove('spin'); }
+}
+setInterval(() => { if (CHAVE && INI && document.visibilityState === 'visible' && !document.querySelector('dialog[open]') && !/config|hotmart/.test(location.hash)) { cache.clear(); atualizar(); } }, 60e3);
+setInterval(() => { if (ATUALIZADO && $('#atual')) $('#atual').textContent = 'atualizado ' + haQuanto(ATUALIZADO); }, 15e3);
+function marcaAtualizado() { ATUALIZADO = new Date(); if ($('#atual')) $('#atual').textContent = 'atualizado agora'; }
+
+// ===== rotas =====
+async function rota(silencioso) {
+  const h = location.hash || '#/';
+  let m = h.match(/^#\/funil\/([a-z0-9]+)(\/config)?/);
+  if (m) { location.replace(`#/f/${m[1]}${m[2] ? '/config' : ''}`); return; }
+  m = h.match(/^#\/f\/([a-z0-9]+)(?:\/(origens|vendas|config))?/);
+  if (m) {
+    if (st.funil !== m[1]) { st.funil = m[1]; st.filtro = {}; }
+  } else st.funil = null;
+  $("#tip").style.display = "none";
+  lateral();
+  const app = $('#app');
+  try {
+    if (m) await telaFunil(m[1], m[2] || 'resumo', silencioso);
+    else if (h.startsWith('#/hotmart')) await telaHotmart();
+    else await telaGeral(silencioso);
+    marcaAtualizado();
+  } catch (e) {
+    if (e.message === 'chave') return;
+    app.innerHTML = `<div class="card erro empty"><b>Não deu pra carregar</b>${esc(e.message)}<br><br><button class="btn" id="tenta">Tentar de novo</button></div>`;
+    $('#tenta').onclick = () => atualizar(true);
+  }
+}
+window.addEventListener('hashchange', () => { if (chaveDoLink()) return iniciar(); if (CHAVE && INI) { window.scrollTo(0, 0); rota(); } });
+
+function esqueleto() {
+  $('#app').innerHTML = `<div class="sk" style="height:56px;margin-bottom:18px;width:40%"></div>
+    <div class="kpis">${'<div class="sk" style="height:96px"></div>'.repeat(5)}</div>
+    <div class="grid g2"><div class="sk" style="height:300px"></div><div class="sk" style="height:300px"></div></div>`;
+}
+async function carrega(fn, silencioso) {
+  const app = $('#app');
+  if (silencioso) app.classList.add('dim'); else esqueleto();
+  try { return await fn(); } finally { app.classList.remove('dim'); }
+}
+const kpi = (l, v, d = '', hl = false) => `<div class="card kpi${hl ? ' hl' : ''}"><div class="l">${l}</div><div class="v num">${v}</div><div class="d">${d}</div></div>`;
+const nomeOp = slug => (INI.operacoes.find(o => o.slug === slug) || {nome: slug}).nome;
+
+// ===== visão geral =====
+async function telaGeral(silencioso) {
+  crumb('<b>Visão geral</b>');
+  const r = await carrega(() => rpcCache('visao_geral', {de: st.de, ate: st.ate}), silencioso);
+  const ant = Object.fromEntries(r.anterior.map(f => [f.funil_id, f]));
+  const soma = (l) => l.reduce((a, f) => ({v: a.v + f.visitantes, s: a.s + f.vendas, r: a.r + Number(f.receita)}), {v: 0, s: 0, r: 0});
+  const t = soma(r.funis), ta = soma(r.anterior);
+  const cv = t.v ? 100 * t.s / t.v : null, cva = ta.v ? 100 * ta.s / ta.v : null;
+  const vsTxt = `vs ${fdia(r.pde)}${r.pde !== r.pate ? '–' + fdia(r.pate) : ''}`;
+  const porOp = INI.operacoes.map(o => ({...o, funis: r.funis.filter(f => f.operacao === o.slug)})).filter(o => o.funis.length);
+  $('#app').innerHTML = `
+    <div class="ph"><div class="t"><h1>Visão geral</h1><div class="sub">${periodoTxt()} · ${r.funis.length} funil(is)</div></div>
+      <button class="btn pri" id="novo">＋ Novo funil</button></div>
+    <div class="kpis">
+      ${kpi('Visitantes', n(t.v), `${delta(t.v, ta.v)}<span>${vsTxt}</span>`)}
+      ${kpi('Vendas', n(t.s), `${delta(t.s, ta.s)}<span>compras aprovadas</span>`)}
+      ${kpi('Conversão', pct(cv), `${delta(cv, cva)}<span>vendas ÷ visitantes</span>`, true)}
+      ${kpi('Receita', money(t.r), `${delta(t.r, ta.r)}${t.s ? `<span>ticket ${money(t.r / t.s)}</span>` : ''}`)}
+    </div>
+    ${porOp.length ? `<div class="card"><div class="card-h"><h2>Funis</h2><span class="sp"></span><span class="tiny">clique num funil para abrir</span></div>
+      <div class="tbl"><table class="ft"><thead><tr><th class="l">Funil</th><th class="l">Visitantes por dia</th><th>Visitantes</th><th>Vendas</th><th>Conversão</th><th>Receita</th><th>vs anterior</th></tr></thead><tbody>
+      ${porOp.map(o => `<tr class="op"><td colspan="7">${esc(o.nome)}</td></tr>
+        ${o.funis.map(f => {
+          const fi = INI.funis.find(x => x.id === f.funil_id) || {};
+          return `<tr class="click" data-href="#/f/${f.funil_id}">
+            <td class="l nm"><a href="#/f/${f.funil_id}"><span class="dot ${aoVivo(fi.ultimo_acesso) ? 'live' : ''}" style="display:inline-block;margin-right:8px;vertical-align:1px"></span>${esc(f.funil)}</a>
+              <small>${f.etapas} etapa(s) · ${fi.ultimo_acesso ? 'último acesso ' + haQuanto(fi.ultimo_acesso) : 'sem acessos ainda'}</small></td>
+            <td class="l">${spark(r.series[f.funil_id] || [])}</td>
+            <td>${n(f.visitantes)}</td><td><b>${n(f.vendas)}</b></td><td><span class="cv">${pct(f.conversao)}</span></td><td>${money(f.receita)}</td>
+            <td>${delta(f.vendas, (ant[f.funil_id] || {}).vendas) || '<span class="tiny">—</span>'}</td></tr>`; }).join('')}`).join('')}
+      </tbody></table></div></div>`
+    : `<div class="card empty"><b>Nenhum funil ainda</b>Crie um funil, cole o código em cada página e os acessos aparecem aqui.<br><br><button class="btn pri" id="novo2">＋ Criar o primeiro funil</button></div>`}
+    ${r.sem_funil && r.sem_funil.vendas ? `<div class="card mt" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span class="pill warn">${n(r.sem_funil.vendas)} venda(s) sem funil</span><span class="muted">${money(r.sem_funil.receita)} no período vieram de páginas sem o script.</span>
+      <span class="sp"></span><a class="lk" href="#/hotmart">ver vendas</a></div>` : ''}`;
+  $('#novo').onclick = novoFunil; const b2 = $('#novo2'); if (b2) b2.onclick = novoFunil;
+  $$('tr[data-href]').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = tr.dataset.href; });
+}
+function spark(vals) {
+  if (!vals.length) return '';
+  const W = 110, H = 26, m = Math.max(1, ...vals);
+  if (vals.length === 1) return `<span class="tiny">${n(vals[0])} hoje</span>`;
+  const pts = vals.map((v, i) => `${(i * W / (vals.length - 1)).toFixed(1)},${(H - 2 - (H - 4) * v / m).toFixed(1)}`).join(' ');
+  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="#7c5cff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+
+// ===== funil =====
+async function telaFunil(id, aba, silencioso) {
+  let f = INI.funis.find(x => x.id === id);
+  if (!f) { await recarregaIni(); f = INI.funis.find(x => x.id === id); if (!f) { location.hash = '#/'; return; } }
+  crumb(`${esc(nomeOp(f.operacao))} / <b>${esc(f.nome)}</b>`);
+  const vivo = aoVivo(f.ultimo_acesso);
+  const topo = `<div class="ph"><div class="t"><div class="eyebrow">${esc(nomeOp(f.operacao))}</div><h1>${esc(f.nome)}</h1>
+      <div class="sub">${periodoTxt()}</div></div>
+      <span class="pill ${vivo ? 'ok' : ''}"><span class="dot ${vivo ? 'live' : ''}"></span>${vivo ? 'recebendo acessos agora' : f.ultimo_acesso ? 'último acesso ' + haQuanto(f.ultimo_acesso) : 'nenhum acesso ainda'}</span></div>
+    <nav class="tabs">${[['resumo', 'Resumo', ''], ['origens', 'Origens (UTM)', '/origens'], ['vendas', 'Vendas', '/vendas'], ['config', 'Etapas e código', '/config']]
+      .map(t => `<a href="#/f/${id}${t[2]}" class="${aba === t[0] ? 'on' : ''}">${t[1]}</a>`).join('')}</nav>`;
+  if (aba === 'config') { $('#app').innerHTML = topo + '<div id="aba"></div>'; return abaConfig(f); }
+  const fil = Object.entries(st.filtro);
+  const filHtml = fil.length ? `<div class="filtros"><span class="tiny">Filtrando:</span>${fil.map(([k, v]) => `<span class="chip">${nomeCampo(k)}: <b title="${esc(v)}">${esc(limpa(v))}</b><button data-rm="${k}" title="tirar filtro">×</button></span>`).join('')}<button class="lk" id="limpa">limpar</button></div>` : '';
+  const args = {funil_id: id, de: st.de, ate: st.ate, campo: st.campo, filtro: st.filtro};
+  const [r, passos, vsls] = await carrega(() => Promise.all([
+    rpcCache('relatorio', args),
+    f.etapas.some(e => e.passos) ? post('painel_passos', {p_chave: CHAVE, p_funil: id, p_de: st.de, p_ate: st.ate, p_filtro: st.filtro}).catch(() => []) : [],
+    post('painel_vsl', {p_chave: CHAVE, p_funil: id, p_de: st.de, p_ate: st.ate, p_filtro: st.filtro}).catch(() => [])
+  ]), silencioso);
+  $('#app').innerHTML = topo + filHtml + '<div id="aba"></div>';
+  $$('[data-rm]').forEach(b => b.onclick = () => { delete st.filtro[b.dataset.rm]; rota(); });
+  const lb = $('#limpa'); if (lb) lb.onclick = () => { st.filtro = {}; rota(); };
+  if (aba === 'origens') return abaOrigens(f, r);
+  if (aba === 'vendas') return abaVendas(f, r);
+  return abaResumo(f, r, passos, vsls);
+}
+
+const mmss = s => s == null ? '—' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+function cardVsl(vsls) {
+  if (!vsls || !vsls.length) return '';
+  return vsls.filter(v => v.vturb || v.clicaram).map(v => {
+    const t = v.vturb;
+    // funil da VSL só com números do VTurb (mesma fonte, mesma janela); o Funnelytics vem à parte
+    const linhas = t ? [
+      {nome: 'Deram play', v: Number(t.plays || 0)},
+      ...(t.viram_pitch != null ? [{nome: 'Viram o pitch', sub: `pitch em ${mmss(v.pitch_seg)}`, v: Number(t.viram_pitch || 0)}] : []),
+      {nome: 'Clicaram no botão', v: Number(t.clicaram || 0)}] : [];
+    const final = t ? {nome: 'Conversões', sub: money(t.receita), v: Number(t.conversoes || 0)} : null;
+    const fy = `<div class="kpis" style="grid-template-columns:repeat(3,1fr);margin:14px 0 0">
+        ${kpi('Clicaram no botão e foram pra página', n(v.clicaram), `<span>em média aos ${mmss(v.segundo_medio)} do vídeo</span>`)}
+        ${kpi('Desses, compraram', n(v.vendas), `<span>${money(v.receita)}</span>`)}
+        ${kpi('Conversão do clique', pct(v.conversao), `<span>${n(v.vendas)} de ${n(v.clicaram)} que clicaram</span>`, true)}</div>
+      <p class="tiny" style="margin:8px 0 0">Esses três são do Funnelytics (só deste funil, desde que o script entrou). O funil acima é do VTurb e soma todas as origens onde a VSL roda.</p>`;
+    // curva de retenção: quantos ainda assistiam em cada bloco de 5 s
+    let curva = '';
+    if (t && t.saidas && t.saidas.length) {
+      const tot = t.saidas.reduce((a, x) => a + x.total_users, 0); let saiu = 0;
+      const pts = t.saidas.map(x => { const ficou = tot - saiu; saiu += x.total_users; return {x: mmss(x.timed), v: ficou, tip: `${mmss(x.timed)} do vídeo\n${n(ficou)} assistindo (${pct(100 * ficou / tot)})`}; });
+      curva = `<div class="ct" style="margin-top:6px"><span>Retenção (quantos ainda assistiam)</span><b class="num">${t.tempo_medio ? 'média ' + mmss(Math.round(t.tempo_medio)) : ''}</b></div>${barras(pts, '#7c5cff', 130)}`;
+    }
+    return `<div class="card mt"><div class="card-h"><h2>VSL: ${esc(v.vsl)}</h2><span class="sp"></span>
+        ${t ? `<span class="tiny">VTurb atualizado ${haQuanto(t.atualizado_em)}</span>` : '<span class="pill warn">sem dados do VTurb ainda</span>'}</div>
+      <div class="grid g2">
+        <div>${t ? `<div class="tiny" style="font-weight:600;margin-bottom:8px">VTurb</div>${funilHtml(linhas, final)}` : ''}${fy}</div>
+        <div class="chart">${curva || '<p class="muted">A curva de retenção aparece quando o VTurb estiver ligado.</p>'}</div>
+      </div></div>`;
+  }).join('');
+}
+
+function abaResumo(f, r, passos, vsls) {
+  const v = r.vendas || {}, a = r.anterior || {}, et = r.etapas;
+  const cliques = et.reduce((s, e) => s + Number(e.cliques_checkout || 0), 0);
+  const reemb = (v.reembolsadas || 0) + (v.chargebacks || 0);
+  const vsTxt = `vs ${fdia(r.pde)}${r.pde !== r.pate ? '–' + fdia(r.pate) : ''}`;
+  const pontos = r.horas
+    ? r.horas.map(h => ({x: String(h.hora).padStart(2, '0') + 'h', vis: h.visitantes, vds: h.vendas, rec: h.receita, rot: `${h.hora}h–${h.hora + 1}h`}))
+    : r.serie.map(s => ({x: fdia(s.dia), vis: s.visitantes, vds: s.vendas, rec: s.receita, rot: fdia(s.dia)}));
+  const top = [...r.utm].filter(u => u.vendas || u.visitantes).slice(0, 5);
+  $('#aba').innerHTML = `
+    <div class="kpis">
+      ${kpi('Visitantes', n(v.visitantes), `${delta(v.visitantes, a.visitantes)}<span>${vsTxt}</span>`)}
+      ${kpi('Cliques no checkout', n(cliques), v.visitantes ? `<span>${pct(100 * cliques / v.visitantes)} dos visitantes</span>` : '')}
+      ${kpi('Vendas', n(v.aprovadas), `${delta(v.aprovadas, a.aprovadas)}${v.aguardando ? `<span>+${n(v.aguardando)} aguardando</span>` : ''}`)}
+      ${kpi('Conversão', pct(v.conversao), `${delta(v.conversao, a.conversao)}<span>${n(v.aprovadas)} vendas ÷ ${n(v.visitantes)} pessoas que passaram pelo funil</span>`, true)}
+      ${kpi('Receita', money(v.receita), `${delta(v.receita, a.receita)}${v.ticket_medio ? `<span>ticket ${money(v.ticket_medio)}</span>` : ''}`)}
+      ${kpi('Reembolsos', n(reemb), reemb && v.aprovadas ? `<span>${pct(100 * reemb / (v.aprovadas + reemb))} das vendas</span>` : '<span>no período</span>')}
+    </div>
+    <div class="grid g2">
+      <div class="card"><div class="card-h"><h2>Funil</h2><span class="sp"></span><span class="tiny">visitantes únicos</span></div>
+        ${et.length ? funilHtml(linhasFunil(et, passos, vsls), {nome: 'Vendas', sub: money(v.receita), v: v.aprovadas || 0})
+          + `<p class="tiny" style="margin:12px 0 0">Pessoas diferentes em cada etapa. A % da direita é sobre quem entrou na 1ª etapa (${n(et[0].visitantes)}); o cartão Conversão lá em cima divide pelas ${n(v.visitantes)} pessoas que passaram por qualquer página do funil, inclusive quem foi direto pra uma etapa do meio.</p>`
+          : `<div class="empty"><b>Sem etapas</b><a class="lk" href="#/f/${f.id}/config">Adicionar as páginas do funil</a></div>`}
+      </div>
+      <div class="card chart"><div class="card-h"><h2>${r.horas ? 'Por hora' : 'Por dia'}</h2></div>
+        <div class="ct"><span>Visitantes</span><b class="num">${n(v.visitantes)}</b></div>
+        ${barras(pontos.map(p => ({x: p.x, v: p.vis, tip: `${p.rot}\n${n(p.vis)} visitantes`})), '#7c5cff')}
+        <div class="ct" style="margin-top:16px"><span>Vendas</span><b class="num">${n(v.aprovadas)}</b></div>
+        ${barras(pontos.map(p => ({x: p.x, v: p.vds, tip: `${p.rot}\n${n(p.vds)} venda(s) · ${money(p.rec)}`})), '#34d399', 110)}
+      </div>
+    </div>
+    ${(passos || []).filter(p => (p.passos || []).length).map(p => `<div class="card mt"><div class="card-h"><h2>Telas de “${esc(p.etapa)}”</h2><span class="sp"></span><span class="tiny">onde as pessoas saem, tela por tela</span></div>
+      ${funilHtml(p.passos.map((x, i) => ({nome: `${i + 1}. ${i === p.passos.length - 1 && vslDoFunil(vsls) ? 'VSL' : x.passo}`, v: x.visitantes})), null, true)}
+      <p class="tiny" style="margin:12px 0 0">Tela sem título grande aparece como “Tela N” (nada do que a pessoa digita é guardado).</p></div>`).join('')}
+    ${cardVsl(vsls)}
+    <div class="grid g2e mt">
+      <div class="card"><div class="card-h"><h2>Melhores por ${nomeCampo(r.campo).toLowerCase()}</h2><span class="sp"></span><a class="lk" href="#/f/${f.id}/origens">ver tudo</a></div>
+        ${top.length ? `<div class="tbl"><table><thead><tr><th class="l">${nomeCampo(r.campo)}</th><th>Visitantes</th><th>Vendas</th><th>Conversão</th></tr></thead><tbody>
+          ${top.map(u => `<tr class="click" data-g="${esc(u.grupo)}"><td class="l nm" title="${esc(u.grupo)}">${esc(limpa(u.grupo))}</td><td>${n(u.visitantes)}</td><td><b>${n(u.vendas)}</b></td><td><span class="cv">${pct(u.conversao)}</span></td></tr>`).join('')}
+        </tbody></table></div>` : '<p class="muted">Nenhum acesso no período.</p>'}
+      </div>
+      <div class="card"><div class="card-h"><h2>Order bumps</h2><span class="sp"></span><span class="tiny">${n(v.aprovadas)} compra(s)</span></div>${tabelaBumps(r.order_bumps)}</div>
+    </div>
+    <div class="card mt"><div class="card-h"><h2>Últimas vendas</h2><span class="sp"></span><a class="lk" href="#/f/${f.id}/vendas">ver todas</a></div>${tabelaVendas(r.ultimas_vendas, 6)}</div>`;
+  $$('#aba tr[data-g]').forEach(tr => tr.onclick = () => { st.filtro[r.campo] = tr.dataset.g; rota(); });
+  desenhaGraficos();
+}
+
+// linhas do funil: cada etapa e, quando a etapa tem telas e o funil tem VSL, a linha "VSL" logo depois
+// (pessoas deste funil que chegaram na última tela, a da VSL; as taxas do VTurb vão como detalhe)
+function vslDoFunil(vsls) { return (vsls || []).find(x => x.vturb) || (vsls || [])[0] || null; }
+function linhasFunil(et, passos, vsls) {
+  const pm = Object.fromEntries((passos || []).map(p => [p.etapa_id, p.passos || []]));
+  const vs = vslDoFunil(vsls), t = vs && vs.vturb;
+  const out = [];
+  et.forEach(e => {
+    out.push({nome: e.etapa, sub: `${n(e.acessos)} acessos${e.leads ? ' · ' + n(e.leads) + ' leads' : ''}${e.cliques_checkout ? ' · ' + n(e.cliques_checkout) + ' cliques no checkout' : ''}`, v: e.visitantes});
+    const ps = pm[e.etapa_id];
+    if (vs && ps && ps.length) {
+      const ult = ps[ps.length - 1];
+      out.push({nome: 'VSL', v: ult.visitantes,
+        sub: t && t.plays ? `VTurb: ${pct(100 * t.viram_pitch / t.plays)} veem o pitch · ${pct(100 * t.clicaram / t.plays)} clicam` : `chegaram na tela ${ult.ordem}`});
+    }
+  });
+  return out;
+}
+
+// barras horizontais do funil, com a queda entre uma linha e outra
+function funilHtml(linhas, final, largo) {
+  const todas = final ? [...linhas, final] : linhas;
+  const max = Math.max(1, ...todas.map(l => l.v)), topo = todas[0].v || 0;
+  let pior = -1, piorQ = 0;
+  if (todas.length >= 4) todas.forEach((l, i) => { if (i && todas[i - 1].v - l.v > piorQ) { piorQ = todas[i - 1].v - l.v; pior = i; } });
+  return `<div class="fun${largo ? ' largo' : ''}">${todas.map((l, i) => {
+    const venda = final && i === todas.length - 1;
+    const ant = i ? todas[i - 1].v : 0;
+    const gap = i ? `<div class="sep"></div><div class="gap${i === pior && piorQ > 0 ? ' pior' : ''}">${ant ? `↓ <span class="s">${pct(Math.min(100 * l.v / ant, 999))}</span> seguiram · <span class="q">${n(Math.max(ant - l.v, 0))}</span> saíram${i === pior && piorQ > 0 ? ' · <b style="color:var(--bad)">maior saída</b>' : ''}` : '&nbsp;'}</div>` : '';
+    return `${gap}<div class="n" title="${esc(l.nome)}">${esc(l.nome)}${l.sub ? `<small>${esc(l.sub)}</small>` : ''}</div>
+      <div class="bar${venda ? ' sale' : ''}"><b style="width:${100 * l.v / max}%"></b><span class="num">${n(l.v)}</span></div>
+      <div class="p num">${topo ? pct(100 * l.v / topo) : '—'}</div>`;
+  }).join('')}</div>`;
+}
+
+// gráfico de barras simples (uma série, um eixo) com dica ao passar o mouse
+function niceMax(m) { if (m <= 4) return Math.max(1, Math.ceil(m)); const p = Math.pow(10, Math.floor(Math.log10(m))); for (const k of [1, 2, 2.5, 5, 10]) if (k * p >= m) return k * p; return 10 * p; }
+// o gráfico é desenhado depois, na largura real do cartão (texto sempre no tamanho certo)
+const GRAFICOS = new Map(); let gid = 0;
+function barras(pts, cor, H = 150) {
+  if (!pts.length) return '<p class="muted">Sem dados.</p>';
+  const k = 'g' + (++gid); GRAFICOS.set(k, {pts, cor, H});
+  return `<div class="bc" data-g="${k}" style="height:${H}px"></div>`;
+}
+function desenhaGraficos() {
+  $$('.bc[data-g]').forEach(el => { const g = GRAFICOS.get(el.dataset.g); if (g) el.innerHTML = svgBarras(g.pts, g.cor, g.H, el.clientWidth || 300); });
+}
+let redim; window.addEventListener('resize', () => { clearTimeout(redim); redim = setTimeout(desenhaGraficos, 120); });
+function svgBarras(pts, cor, H, W) {
+  const PL = 34, PB = 20, PT = 6, top = niceMax(Math.max(...pts.map(p => p.v)));
+  const ch = H - PB - PT, bw = (W - PL) / pts.length, g = Math.min(8, bw * .28), w = Math.max(2, bw - g);
+  const y = v => PT + ch - ch * v / top;
+  const passo = Math.max(1, Math.ceil(pts.length / Math.max(2, Math.floor((W - PL) / 46))));
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">`;
+  [0, top / 2, top].filter(t => Number.isInteger(t)).forEach(t => { s += `<line x1="${PL}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="#222938" stroke-width="1"/><text x="${PL - 6}" y="${y(t) + 3.5}" fill="#6d7790" font-size="10" text-anchor="end">${n(t)}</text>`; });
+  pts.forEach((p, i) => {
+    const x = PL + i * bw + g / 2, h = ch * p.v / top;
+    if (p.v > 0) { const r = Math.min(4, w / 2, h); const yb = PT + ch, yt = yb - h;
+      s += `<path d="M${x},${yb} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + w - r} Q${x + w},${yt} ${x + w},${yt + r} V${yb} Z" fill="${cor}"/>`; }
+    s += `<rect x="${PL + i * bw}" y="${PT}" width="${bw}" height="${ch}" fill="transparent" data-tip="${esc(p.tip)}"/>`;
+    if (i % passo === 0) s += `<text x="${x + w / 2}" y="${H - 5}" fill="#6d7790" font-size="10" text-anchor="middle">${esc(p.x)}</text>`;
+  });
+  return s + '</svg>';
+}
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest && e.target.closest('[data-tip]'), tip = $('#tip');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.textContent = t.dataset.tip; tip.style.display = 'block';
+  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8);
+  tip.style.left = x + 'px'; tip.style.top = (e.clientY - tip.offsetHeight - 12) + 'px';
+});
+
+function tabelaBumps(rows) {
+  if (!rows.length) return '<p class="muted" style="margin:0">Nenhum order bump vendido no período.</p>';
+  return `<div class="tbl"><table><thead><tr><th class="l">Order bump</th><th>Levaram</th><th>Taxa</th><th>Receita</th></tr></thead><tbody>
+    ${rows.map(b => `<tr><td class="l nm"><b>${esc(b.produto || b.produto_id)}</b></td><td>${n(b.com_bump)} de ${n(b.compras)}</td>
+      <td><span class="cv">${pct(b.taxa)}</span></td><td>${money(b.receita)}</td></tr>`).join('')}
+  </tbody></table></div><p class="tiny" style="margin:10px 0 0">Taxa = compras aprovadas que levaram o order bump. Ele não conta como venda, mas entra na receita e no ticket.</p>`;
+}
+function tabelaVendas(rows, limite) {
+  if (!rows.length) return '<p class="muted" style="margin:0">Nenhuma venda no período.</p>';
+  let lista = rows;
+  if (limite) { const ped = [...new Set(rows.filter(s => !s.order_bump).map(s => s.pedido))].slice(0, limite); lista = rows.filter(s => ped.includes(s.pedido)); }
+  return `<div class="tbl"><table><thead><tr><th class="l">Quando</th><th class="l">Comprador</th><th class="l">Produto</th><th class="l">Status</th><th class="l">Veio de</th><th>Valor</th></tr></thead><tbody>
+    ${lista.map(s => s.order_bump
+      ? `<tr class="bump"><td></td><td></td><td class="l">↳ ${esc(s.produto_nome || '—')} <span class="tiny">order bump</span></td><td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td><td></td><td>${money(s.valor)}</td></tr>`
+      : `<tr><td class="l">${quando(s.comprada_em)}</td><td class="l nm">${esc(s.comprador_nome || '—')}<div class="tiny">${esc(s.comprador_email || '')}</div></td>
+        <td class="l">${esc(s.produto_nome || '—')}</td><td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td>
+        <td class="l nm" title="${esc([s.utm_source, s.utm_campaign, s.utm_content].filter(Boolean).join(' / '))}">${esc([s.utm_source, limpa(s.utm_content || s.utm_campaign)].filter(Boolean).join(' · ') || '—')}<div class="tiny">${s.etapa ? esc(s.etapa) + ' · ' : ''}via ${ATR[s.atribuicao] || '—'}</div></td>
+        <td><b>${money(s.valor)}</b></td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function abaOrigens(f, r) {
+  const cols = [['grupo', nomeCampo(r.campo), 'l'], ['visitantes', 'Visitantes'], ['leads', 'Leads'], ['cliques_checkout', 'Cliques checkout'], ['vendas', 'Vendas'], ['receita', 'Receita'], ['conversao', 'Conversão']];
+  const temLeads = r.utm.some(u => u.leads);
+  const o = st.ordem;
+  const rows = [...r.utm].sort((a, b) => { const x = a[o.col], y = b[o.col]; return (typeof x === 'string' ? String(x).localeCompare(y) : Number(x || 0) - Number(y || 0)) * o.dir; });
+  const maxV = Math.max(1, ...rows.map(u => u.visitantes));
+  const melhor = Math.max(0, ...rows.filter(u => u.visitantes >= 10).map(u => Number(u.conversao || 0)));
+  $('#aba').innerHTML = `<div class="card"><div class="card-h"><h2>Conversão por</h2>
+      <div class="seg" id="campo">${CAMPOS.map(c => `<button data-c="${c[0]}" class="${c[0] === r.campo ? 'on' : ''}">${c[1]}</button>`).join('')}</div>
+      <span class="sp"></span><span class="tiny">clique numa linha para filtrar o funil inteiro</span></div>
+    ${rows.length ? `<div class="tbl"><table><thead><tr>${cols.filter(c => c[0] !== 'leads' || temLeads).map(c => `<th class="s ${c[2] || ''} ${o.col === c[0] ? 'on' : ''}" data-o="${c[0]}">${c[1]}${o.col === c[0] ? (o.dir < 0 ? ' ↓' : ' ↑') : ''}</th>`).join('')}</tr></thead><tbody>
+      ${rows.map(u => `<tr class="click" data-g="${esc(u.grupo)}"><td class="l nm" title="${esc(u.grupo)}"><b>${esc(limpa(u.grupo))}</b></td>
+        <td>${n(u.visitantes)}<span class="mbar"><i style="width:${100 * u.visitantes / maxV}%"></i></span></td>${temLeads ? `<td>${n(u.leads)}</td>` : ''}
+        <td>${n(u.cliques_checkout)}</td><td><b>${n(u.vendas)}</b></td><td>${money(u.receita)}</td>
+        <td><span class="cv ${melhor && Number(u.conversao) === melhor ? 'top' : ''}">${pct(u.conversao)}</span></td></tr>`).join('')}
+    </tbody></table></div><p class="tiny" style="margin:12px 0 0">Em verde, a melhor conversão entre as linhas com pelo menos 10 visitantes. Nomes da Utmify aparecem sem o número do anúncio (passe o mouse para ver).</p>`
+    : '<p class="muted">Nenhum acesso com esse filtro no período.</p>'}</div>`;
+  $('#campo').onclick = e => { const c = e.target.dataset.c; if (c) { st.campo = c; ls.set('fy_campo', c); rota(); } };
+  $$('th[data-o]').forEach(th => th.onclick = () => { const c = th.dataset.o; st.ordem = {col: c, dir: st.ordem.col === c ? -st.ordem.dir : (c === 'grupo' ? 1 : -1)}; abaOrigens(f, r); });
+  $$('#aba tr[data-g]').forEach(tr => tr.onclick = () => { st.filtro[r.campo] = tr.dataset.g; rota(); });
+}
+
+function abaVendas(f, r) {
+  const grupos = {todas: () => true, aprovada: s => s.status === 'aprovada', reemb: s => ['reembolsada', 'chargeback', 'disputa'].includes(s.status), pend: s => ['aguardando', 'atrasada', 'cancelada', 'expirada'].includes(s.status)};
+  const nomes = [['todas', 'Todas'], ['aprovada', 'Aprovadas'], ['reemb', 'Reembolsos'], ['pend', 'Pendentes / canceladas']];
+  const princ = r.ultimas_vendas.filter(s => !s.order_bump);
+  const ped = new Set(princ.filter(grupos[st.statusV]).map(s => s.pedido));
+  const lista = r.ultimas_vendas.filter(s => ped.has(s.pedido));
+  $('#aba').innerHTML = `<div class="card"><div class="card-h"><h2>Vendas</h2>
+      <div class="seg" id="sv">${nomes.map(x => `<button data-s="${x[0]}" class="${st.statusV === x[0] ? 'on' : ''}">${x[1]} <span class="tiny">${princ.filter(grupos[x[0]]).length}</span></button>`).join('')}</div></div>
+    ${tabelaVendas(lista)}${princ.length >= 50 ? '<p class="tiny" style="margin:12px 0 0">Mostrando as 50 compras mais recentes do período.</p>' : ''}</div>`;
+  $('#sv').onclick = e => { const b = e.target.closest('button'); if (b) { st.statusV = b.dataset.s; abaVendas(f, r); } };
+}
+
+// ===== etapas e código =====
+function abaConfig(f) {
+  $('#aba').innerHTML = `<div class="grid g2">
+    <div class="card"><div class="card-h"><h2>Páginas do funil</h2><span class="sp"></span><button class="btn sm" id="addE">＋ Etapa</button></div>
+      <p class="tiny" style="margin:-6px 0 6px">Cole a linha de cada etapa no <code>&lt;head&gt;</code> da página dela.</p>
+      ${f.etapas.map((e, i) => `<div class="etp">
+        <div class="nº">${i + 1}</div>
+        <div style="min-width:0"><b>${esc(e.nome)}</b> ${e.passos ? '<span class="pill" title="conta as telas que trocam sem mudar o endereço">conta telas</span>' : ''}
+          <div class="tiny" style="overflow:hidden;text-overflow:ellipsis">${e.url ? esc(e.url) : 'sem URL (opcional)'}</div>
+          <div class="code"><code>${esc(SCRIPT(e))}</code><button class="btn sm pri" data-cp="${e.id}">Copiar</button></div></div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <button class="btn sm ghost" data-up="${i}" ${i ? '' : 'disabled'} title="subir">↑</button>
+          <button class="btn sm ghost" data-ed="${e.id}" title="editar">✎</button>
+          <button class="btn sm ghost bad" data-del="${e.id}" title="excluir">✕</button>
+        </div></div>`).join('') || '<p class="muted">Nenhuma etapa. Adicione as páginas na ordem em que a pessoa passa.</p>'}
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><div class="card-h"><h2>Funil</h2></div>
+        <form class="form" id="ff">
+          <label>Nome<input type="text" name="nome" value="${esc(f.nome)}"></label>
+          <label>Produtos da Hotmart só deste funil (IDs, opcional)
+            <input type="text" name="prod" value="${esc((f.produtos_hotmart || []).join(', '))}" placeholder="ex.: 1234567, 7654321"></label>
+          <p class="tiny" style="margin:0">Venda desses produtos que chegar sem rastreio entra neste funil. Use só se o produto não for vendido em outro funil.</p>
+          <div class="acts" style="margin:0;justify-content:space-between"><button type="button" class="btn sm ghost bad" id="delF">Excluir funil</button><button class="btn pri">Salvar</button></div>
+        </form></div>
+      <div class="card"><div class="card-h"><h2>Como funciona</h2></div>
+        <div class="step"><b>1</b><div>A linha registra cada acesso com as UTMs da URL e cria um id anônimo do visitante.</div></div>
+        <div class="step"><b>2</b><div>No clique pra Hotmart, o id vai no <code>sck</code>/<code>xcod</code> (só se estiverem vazios). Com Utmify na página, a venda é ligada pelas UTMs que ela manda.</div></div>
+        <div class="step"><b>3</b><div>Formulário com e-mail vira <b>lead</b>, e serve de reserva para ligar a venda.</div></div>
+        <div class="step"><b>4</b><div>Página que troca de tela sem mudar o endereço (quiz)? Edite a etapa e marque <b>conta telas</b>.</div></div>
+      </div>
+    </div></div>`;
+  $$('[data-cp]').forEach(b => b.onclick = () => copiar(SCRIPT(f.etapas.find(e => e.id === b.dataset.cp))));
+  $$('[data-del]').forEach(b => b.onclick = async () => {
+    if (!confirm('Excluir esta etapa? Os acessos registrados nela também somem.')) return;
+    await rpc('excluir_etapa', {id: b.dataset.del}); cache.clear(); await recarregaIni(); rota();
+  });
+  $$('[data-up]').forEach(b => b.onclick = async () => {
+    const ids = f.etapas.map(e => e.id), i = Number(b.dataset.up); [ids[i - 1], ids[i]] = [ids[i], ids[i - 1]];
+    await rpc('ordenar_etapas', {funil_id: f.id, ids}); cache.clear(); await recarregaIni(); rota();
+  });
+  $$('[data-ed]').forEach(b => b.onclick = () => editarEtapa(f.id, f.etapas.find(e => e.id === b.dataset.ed)));
+  $('#addE').onclick = () => editarEtapa(f.id, null);
+  $('#ff').onsubmit = async e => {
+    e.preventDefault(); const fd = new FormData(e.target);
+    await rpc('editar_funil', {id: f.id, nome: fd.get('nome'), produtos_hotmart: String(fd.get('prod')).split(/[\s,;]+/).filter(Boolean)});
+    toast('Salvo ✓'); cache.clear(); await recarregaIni(); rota();
+  };
+  $('#delF').onclick = async () => {
+    if (prompt(`Excluir o funil "${f.nome}" e TODOS os acessos dele? Digite EXCLUIR para confirmar.`) !== 'EXCLUIR') return;
+    await rpc('excluir_funil', {id: f.id}); cache.clear(); await recarregaIni(); location.hash = '#/';
+  };
+}
+function editarEtapa(funil, e) {
+  const d = $('#dlg');
+  d.innerHTML = `<h2>${e ? 'Editar etapa' : 'Nova etapa'}</h2><form class="form" id="ef">
+    <label>Nome<input type="text" name="nome" required value="${esc(e ? e.nome : '')}" placeholder="ex.: Página de vendas"></label>
+    <label>URL da página (opcional)<input type="url" name="url" value="${esc(e ? e.url || '' : '')}" placeholder="https://..."></label>
+    <label class="ck"><input type="checkbox" name="passos" ${e && e.passos ? 'checked' : ''}><span>Esta página troca de tela sem mudar o endereço (quiz)<br><span class="tiny">Conta quantas pessoas chegam em cada tela. A linha do script ganha <code>&amp;passos=1</code>.</span></span></label>
+    <div class="acts"><button type="button" class="btn ghost" id="cx">Cancelar</button><button class="btn pri">Salvar</button></div></form>`;
+  d.showModal(); $('#cx').onclick = () => d.close();
+  $('#ef').onsubmit = async ev => {
+    ev.preventDefault(); const fd = new FormData(ev.target);
+    const dados = {nome: fd.get('nome'), url: fd.get('url'), passos: !!fd.get('passos')};
+    await rpc('salvar_etapa', e ? {id: e.id, ...dados} : {funil_id: funil, ...dados});
+    d.close(); cache.clear(); await recarregaIni(); rota();
+  };
+}
+function novoFunil() {
+  document.body.classList.remove('menu');
+  const d = $('#dlg'), ops = INI.operacoes;
+  d.innerHTML = `<h2>Novo funil</h2><form class="form" id="nf">
+    <label>Operação<select name="op">${ops.map(o => `<option value="${esc(o.slug)}">${esc(o.nome)}</option>`).join('')}<option value="__nova">＋ Nova operação…</option></select></label>
+    <label id="lnova" hidden>Nome da nova operação<input type="text" name="nova" placeholder="ex.: Iana Freitas"></label>
+    <label>Nome do funil<input type="text" name="nome" required placeholder="ex.: Lançamento ENEM — aula grátis"></label>
+    <div><div class="tiny" style="font-weight:600;margin-bottom:8px">Etapas, na ordem em que a pessoa passa</div>
+      <div class="etl" id="etl"></div>
+      <button type="button" class="btn sm" id="maisE" style="margin-top:8px">＋ etapa</button></div>
+    <div class="acts"><button type="button" class="btn ghost" id="cx">Cancelar</button><button class="btn pri">Criar funil</button></div></form>`;
+  const numera = () => [...$('#etl').children].forEach((c, i) => c.querySelector('span').textContent = i + 1);
+  const linha = (nome = '') => { const div = document.createElement('div'); div.innerHTML = `<span></span><input type="text" placeholder="Nome da etapa" value="${esc(nome)}"><input type="url" placeholder="URL (opcional)"><button type="button" class="btn sm ghost bad" title="tirar">✕</button>`; div.querySelector('button').onclick = () => { div.remove(); numera(); }; $('#etl').append(div); numera(); };
+  ['Página de captura', 'Página de vendas'].forEach(linha);
+  d.showModal();
+  $('#maisE').onclick = () => linha();
+  $('#cx').onclick = () => d.close();
+  d.querySelector('[name=op]').onchange = ev => $('#lnova').hidden = ev.target.value !== '__nova';
+  $('#nf').onsubmit = async ev => {
+    ev.preventDefault(); const fd = new FormData(ev.target);
+    let op = fd.get('op');
+    try {
+      if (op === '__nova') op = (await rpc('criar_operacao', {nome: fd.get('nova')})).slug;
+      const etapas = [...$('#etl').children].map(c => { const i = c.querySelectorAll('input'); return {nome: i[0].value.trim(), url: i[1].value.trim()}; }).filter(e => e.nome);
+      if (!etapas.length) return toast('Coloque pelo menos uma etapa', true);
+      const r = await rpc('criar_funil', {operacao: op, nome: fd.get('nome'), etapas});
+      d.close(); cache.clear(); await recarregaIni(); location.hash = `#/f/${r.id}/config`;
+    } catch (e) { toast(e.message, true); }
+  };
+}
+
+// ===== Hotmart =====
+async function telaHotmart() {
+  crumb('<b>Hotmart</b>');
+  const semF = await carrega(() => rpc('vendas_sem_funil'));
+  $('#app').innerHTML = `
+    <div class="ph"><div class="t"><h1>Hotmart</h1><div class="sub">As vendas chegam pelo webhook. Cada conta Hotmart tem a sua URL.</div></div>
+      <button class="btn" id="novaC">＋ Conta Hotmart</button></div>
+    <div class="grid g2">
+      <div class="grid" style="align-content:start">
+      ${INI.contas.map(c => {
+        const aprendendo = c.aprendendo_ate && new Date(c.aprendendo_ate) > new Date();
+        return `<div class="card"><div class="card-h"><h2>${esc(c.nome)}</h2><span class="sp"></span>
+            <span class="pill ${c.ultimo_evento ? 'ok' : 'warn'}"><span class="dot ${c.ultimo_evento && aoVivo(c.ultimo_evento) ? 'live' : ''}"></span>${c.ultimo_evento ? 'último evento ' + haQuanto(c.ultimo_evento) : 'esperando o primeiro evento'}</span></div>
+          <div class="tiny" style="font-weight:600">URL do webhook</div>
+          <div class="code"><code>${esc(WEBHOOK(c.chave))}</code><button class="btn sm pri" data-wh="${esc(c.chave)}">Copiar</button></div>
+          <div class="grid g2e" style="margin-top:14px;gap:10px">
+            <div><div class="tiny" style="font-weight:600;margin-bottom:4px">Hottok</div>${c.hottoks ? `<span class="pill ok">${c.hottoks} registrado(s)</span>` : '<span class="pill">ainda não registrado</span>'}
+              <div class="tiny" style="margin-top:6px">${aprendendo ? `aceita hottok novo até ${new Date(c.aprendendo_ate).toLocaleDateString('pt-BR')} · <button class="lk" data-trava="${c.id}">travar agora</button>` : `travado · <button class="lk" data-abre="${c.id}">aceitar novo por 1 dia</button>`}</div>
+              ${c.rejeitados_24h ? `<div class="tiny" style="color:var(--bad);margin-top:4px">${c.rejeitados_24h} chamada(s) recusada(s) em 24h</div>` : ''}</div>
+            <label class="form" style="gap:4px"><span class="tiny" style="font-weight:600">Operação padrão</span>
+              <select data-op="${c.id}"><option value="">—</option>${INI.operacoes.map(o => `<option value="${esc(o.slug)}" ${o.slug === c.operacao ? 'selected' : ''}>${esc(o.nome)}</option>`).join('')}</select>
+              <span class="tiny">para venda sem rastreio</span></label>
+          </div></div>`; }).join('')}
+      </div>
+      <div class="card"><div class="card-h"><h2>Como ligar na Hotmart</h2></div>
+        <div class="step"><b>1</b><div>Na Hotmart: <b>Ferramentas → Webhook → Cadastrar webhook</b>.</div></div>
+        <div class="step"><b>2</b><div>Cole a URL, versão <b>2.0.0</b>, todos os produtos e todos os eventos de compra.</div></div>
+        <div class="step"><b>3</b><div>Clique em <b>Enviar teste</b>. O hottok fica registrado sozinho e a URL passa a aceitar só ele.</div></div>
+        <div class="step"><b>4</b><div>Coprodução: cadastre a mesma URL na conta de cada expert. A mesma venda não conta duas vezes.</div></div>
+      </div>
+    </div>
+    <div class="card mt"><div class="card-h"><h2>Vendas sem funil</h2><span class="pill ${semF.length ? 'warn' : 'ok'}">${semF.filter(s => !s.order_bump).length}</span></div>
+      ${semF.length ? `<p class="tiny" style="margin:-6px 0 10px">Vieram de páginas sem o script do Funnelytics. A origem é o que a Utmify mandou.</p>
+      <div class="tbl"><table><thead><tr><th class="l">Quando</th><th class="l">Produto</th><th class="l">Comprador</th><th class="l">Status</th><th class="l">Origem</th><th>Valor</th></tr></thead><tbody>
+      ${semF.map(s => s.order_bump
+        ? `<tr class="bump"><td></td><td class="l">↳ ${esc(s.produto_nome || '—')} <span class="tiny">order bump</span></td><td></td><td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td><td></td><td>${money(s.valor)}</td></tr>`
+        : `<tr><td class="l">${quando(s.comprada_em)}</td><td class="l">${esc(s.produto_nome || '—')}<div class="tiny">produto ${esc(s.produto_id || '')}</div></td><td class="l">${esc(s.comprador_nome || '—')}</td>
+          <td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td><td class="l">${esc(s.utm_source || '—')}</td><td><b>${money(s.valor)}</b></td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="muted" style="margin:0">Nenhuma. Todas as vendas estão ligadas a um funil.</p>'}
+    </div>`;
+  $$('[data-wh]').forEach(b => b.onclick = () => copiar(WEBHOOK(b.dataset.wh)));
+  $$('[data-trava]').forEach(b => b.onclick = async () => { await rpc('editar_conta', {id: b.dataset.trava, aprender_dias: 0}); await recarregaIni(); rota(); });
+  $$('[data-abre]').forEach(b => b.onclick = async () => { await rpc('editar_conta', {id: b.dataset.abre, aprender_dias: 1}); await recarregaIni(); rota(); });
+  $$('select[data-op]').forEach(s => s.onchange = async () => { await rpc('editar_conta', {id: s.dataset.op, operacao: s.value}); toast('Salvo ✓'); });
+  $('#novaC').onclick = async () => { const nome = prompt('Nome da conta Hotmart (ex.: Hotmart Iana)'); if (!nome) return; await rpc('criar_conta', {nome}); await recarregaIni(); rota(); };
+}
+
+iniciar();
+</script>
+</body>
+</html>
