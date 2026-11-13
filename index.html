@@ -228,7 +228,8 @@ dialog h2{margin-bottom:16px;font-size:17px}
 <script>
 const API = 'https://fllhjovsewrjjrvvyzcz.supabase.co';
 const KEY = 'sb_publishable_rAIcCcmMXLQsakKWyCtxFQ_cFbtYk4T';
-const SCRIPT = e => `<script src="${API}/functions/v1/f?e=${e.id}${e.passos ? '&passos=1' : ''}" async><\/script>`;
+const SCRIPT = e => `<script src="${API}/functions/v1/f?e=${e.id}${e.passos ? '&passos=1' : ''}${e.conta_links ? '&links=1' : ''}" async><\/script>`;
+const ehPagina = f => f && f.tipo === 'pagina';
 const WEBHOOK = k => `${API}/functions/v1/hotmart?k=${k}`;
 const LOGO = '<i><svg viewBox="0 0 32 32"><path d="M6 8h20l-8 9v7l-4 2v-9z" fill="#fff"/></svg></i>';
 const IC_REF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>';
@@ -368,11 +369,13 @@ function syncPer() { $$('#seg button').forEach(b => b.classList.toggle('on', b.d
 
 function lateral() {
   const h = location.hash || '#/';
-  const porOp = INI.operacoes.map(o => ({...o, funis: INI.funis.filter(f => f.operacao === o.slug)}));
+  const porOp = INI.operacoes.map(o => ({...o, funis: INI.funis.filter(f => f.operacao === o.slug && !ehPagina(f)),
+                                          paginas: INI.funis.filter(f => f.operacao === o.slug && ehPagina(f))}));
   $('#side').innerHTML = `<div class="brand">${LOGO}Funnelytics</div>
     <nav class="nav">
       <a href="#/" class="${h === '#/' || h === '' ? 'on' : ''}"><span class="ic">◧</span>Visão geral</a>
       ${porOp.map(o => `<div class="grp"><span>${esc(o.nome)}</span><span>${o.funis.length || ''}</span></div>
+        <a class="fn ${h === '#/t/' + o.slug ? 'on' : ''}" href="#/t/${o.slug}"><span class="ic" style="width:7px">↗</span><span class="t">Tráfego${o.paginas.length ? ` <span class="tiny">· ${o.paginas.length} página(s)</span>` : ''}</span></a>
         ${o.funis.length ? o.funis.map(f => `<a class="fn ${st.funil === f.id && h.startsWith('#/f/') ? 'on' : ''}" href="#/f/${f.id}" title="${esc(f.nome)}">
           <span class="dot ${aoVivo(f.ultimo_acesso) ? 'live' : ''}"></span><span class="t">${esc(f.nome)}</span></a>`).join('')
           : `<div class="vazio">nenhum funil</div>`}`).join('')}
@@ -418,7 +421,9 @@ async function rota(silencioso) {
   lateral();
   const app = $('#app');
   try {
+    const mt = h.match(/^#\/t\/([a-z0-9-]+)/);
     if (m) await telaFunil(m[1], m[2] || 'resumo', silencioso);
+    else if (mt) await telaTrafego(mt[1], silencioso);
     else if (h.startsWith('#/hotmart')) await telaHotmart();
     else await telaGeral(silencioso);
     marcaAtualizado();
@@ -493,13 +498,16 @@ function spark(vals) {
 async function telaFunil(id, aba, silencioso) {
   let f = INI.funis.find(x => x.id === id);
   if (!f) { await recarregaIni(); f = INI.funis.find(x => x.id === id); if (!f) { location.hash = '#/'; return; } }
+  // página solta (ex.: bio): os números ficam na aba Tráfego; aqui só o código
+  if (ehPagina(f) && aba !== 'config') { location.replace(`#/t/${f.operacao}`); return; }
   crumb(`${esc(nomeOp(f.operacao))} / <b>${esc(f.nome)}</b>`);
   const vivo = aoVivo(f.ultimo_acesso);
-  const topo = `<div class="ph"><div class="t"><div class="eyebrow">${esc(nomeOp(f.operacao))}</div><h1>${esc(f.nome)}</h1>
-      <div class="sub">${periodoTxt()}</div></div>
+  const abas = ehPagina(f) ? [['config', 'Código da página', '/config']]
+    : [['resumo', 'Resumo', ''], ['origens', 'Origens (UTM)', '/origens'], ['vendas', 'Vendas', '/vendas'], ['config', 'Etapas e código', '/config']];
+  const topo = `<div class="ph"><div class="t"><div class="eyebrow">${esc(nomeOp(f.operacao))}${ehPagina(f) ? ' · página' : ''}</div><h1>${esc(f.nome)}</h1>
+      <div class="sub">${ehPagina(f) ? `<a class="lk" href="#/t/${f.operacao}">ver o tráfego desta página</a>` : periodoTxt()}</div></div>
       <span class="pill ${vivo ? 'ok' : ''}"><span class="dot ${vivo ? 'live' : ''}"></span>${vivo ? 'recebendo acessos agora' : f.ultimo_acesso ? 'último acesso ' + haQuanto(f.ultimo_acesso) : 'nenhum acesso ainda'}</span></div>
-    <nav class="tabs">${[['resumo', 'Resumo', ''], ['origens', 'Origens (UTM)', '/origens'], ['vendas', 'Vendas', '/vendas'], ['config', 'Etapas e código', '/config']]
-      .map(t => `<a href="#/f/${id}${t[2]}" class="${aba === t[0] ? 'on' : ''}">${t[1]}</a>`).join('')}</nav>`;
+    <nav class="tabs">${abas.map(t => `<a href="#/f/${id}${t[2]}" class="${aba === t[0] ? 'on' : ''}">${t[1]}</a>`).join('')}</nav>`;
   if (aba === 'config') { $('#app').innerHTML = topo + '<div id="aba"></div>'; return abaConfig(f); }
   const fil = Object.entries(st.filtro);
   const filHtml = fil.length ? `<div class="filtros"><span class="tiny">Filtrando:</span>${fil.map(([k, v]) => `<span class="chip">${nomeCampo(k)}: <b title="${esc(v)}">${esc(limpa(v))}</b><button data-rm="${k}" title="tirar filtro">×</button></span>`).join('')}<button class="lk" id="limpa">limpar</button></div>` : '';
@@ -731,7 +739,7 @@ function abaConfig(f) {
       <p class="tiny" style="margin:-6px 0 6px">Cole a linha de cada etapa no <code>&lt;head&gt;</code> da página dela.</p>
       ${f.etapas.map((e, i) => `<div class="etp">
         <div class="nº">${i + 1}</div>
-        <div style="min-width:0"><b>${esc(e.nome)}</b> ${e.passos ? '<span class="pill" title="conta as telas que trocam sem mudar o endereço">conta telas</span>' : ''}
+        <div style="min-width:0"><b>${esc(e.nome)}</b> ${e.passos ? '<span class="pill" title="conta as telas que trocam sem mudar o endereço">conta telas</span>' : ''} ${e.conta_links ? '<span class="pill" title="conta os cliques em cada link da página">conta cliques nos links</span>' : ''}
           <div class="tiny" style="overflow:hidden;text-overflow:ellipsis">${e.url ? esc(e.url) : 'sem URL (opcional)'}</div>
           <div class="code"><code>${esc(SCRIPT(e))}</code><button class="btn sm pri" data-cp="${e.id}">Copiar</button></div></div>
         <div style="display:flex;flex-direction:column;gap:2px">
@@ -783,11 +791,12 @@ function editarEtapa(funil, e) {
     <label>Nome<input type="text" name="nome" required value="${esc(e ? e.nome : '')}" placeholder="ex.: Página de vendas"></label>
     <label>URL da página (opcional)<input type="url" name="url" value="${esc(e ? e.url || '' : '')}" placeholder="https://..."></label>
     <label class="ck"><input type="checkbox" name="passos" ${e && e.passos ? 'checked' : ''}><span>Esta página troca de tela sem mudar o endereço (quiz)<br><span class="tiny">Conta quantas pessoas chegam em cada tela. A linha do script ganha <code>&amp;passos=1</code>.</span></span></label>
+    <label class="ck"><input type="checkbox" name="conta_links" ${e && e.conta_links ? 'checked' : ''}><span>Contar os cliques em cada link (bio)<br><span class="tiny">Mostra quantas pessoas clicaram em cada botão da página. A linha do script ganha <code>&amp;links=1</code>.</span></span></label>
     <div class="acts"><button type="button" class="btn ghost" id="cx">Cancelar</button><button class="btn pri">Salvar</button></div></form>`;
   d.showModal(); $('#cx').onclick = () => d.close();
   $('#ef').onsubmit = async ev => {
     ev.preventDefault(); const fd = new FormData(ev.target);
-    const dados = {nome: fd.get('nome'), url: fd.get('url'), passos: !!fd.get('passos')};
+    const dados = {nome: fd.get('nome'), url: fd.get('url'), passos: !!fd.get('passos'), conta_links: !!fd.get('conta_links')};
     await rpc('salvar_etapa', e ? {id: e.id, ...dados} : {funil_id: funil, ...dados});
     d.close(); cache.clear(); await recarregaIni(); rota();
   };
@@ -818,6 +827,85 @@ function novoFunil() {
       const etapas = [...$('#etl').children].map(c => { const i = c.querySelectorAll('input'); return {nome: i[0].value.trim(), url: i[1].value.trim()}; }).filter(e => e.nome);
       if (!etapas.length) return toast('Coloque pelo menos uma etapa', true);
       const r = await rpc('criar_funil', {operacao: op, nome: fd.get('nome'), etapas});
+      d.close(); cache.clear(); await recarregaIni(); location.hash = `#/f/${r.id}/config`;
+    } catch (e) { toast(e.message, true); }
+  };
+}
+
+// ===== Tráfego (por operação): acessos de cada página, cliques nos links, origem do tráfego =====
+async function telaTrafego(op, silencioso) {
+  const o = INI.operacoes.find(x => x.slug === op);
+  if (!o) { location.hash = '#/'; return; }
+  crumb(`${esc(o.nome)} / <b>Tráfego</b>`);
+  st.trafCampo = st.trafCampo || 'utm_source'; st.trafModo = st.trafModo || 'ultima';
+  const r = await carrega(() => post('painel_trafego', {p_chave: CHAVE, p_operacao: op, p_de: st.de, p_ate: st.ate, p_campo: st.trafCampo, p_modo: st.trafModo}), silencioso);
+  const pags = r.paginas || [];
+  const totAc = pags.reduce((a, p) => a + Number(p.acessos), 0);
+  const linksTot = (r.links || []).reduce((a, l) => a + (l.links || []).reduce((b, x) => b + Number(x.cliques), 0), 0);
+  st.trafPag = pags.some(p => p.etapa_id === st.trafPag) ? st.trafPag : (pags.find(p => p.tipo === 'pagina') || pags[0] || {}).etapa_id;
+  const sel = pags.find(p => p.etapa_id === st.trafPag);
+  const maxV = Math.max(1, ...pags.map(p => Number(p.visitantes)));
+  $('#app').innerHTML = `
+    <div class="ph"><div class="t"><div class="eyebrow">${esc(o.nome)}</div><h1>Tráfego</h1><div class="sub">${periodoTxt()} · quanta gente chegou em cada página e por onde</div></div>
+      <button class="btn pri" id="novaPag">＋ Nova página</button></div>
+    <div class="kpis">
+      ${kpi('Acessos', n(totAc), '<span>em todas as páginas rastreadas</span>')}
+      ${kpi('Páginas rastreadas', n(pags.length), `<span>${pags.filter(p => p.tipo === 'pagina').length} página(s) solta(s) · ${pags.filter(p => p.tipo !== 'pagina').length} de funil</span>`)}
+      ${kpi('Cliques em links', n(linksTot), '<span>nas páginas que contam links (bio)</span>')}
+    </div>
+    ${pags.length ? `<div class="grid g2">
+      <div class="card"><div class="card-h"><h2>Páginas</h2><span class="sp"></span><span class="tiny">clique numa página pra ver o gráfico</span></div>
+        <div class="tbl"><table><thead><tr><th class="l">Página</th><th>Pessoas</th><th>Acessos</th></tr></thead><tbody>
+        ${pags.map(p => `<tr class="click" data-pag="${p.etapa_id}" ${p.etapa_id === st.trafPag ? 'style="background:var(--ac-soft)"' : ''}>
+          <td class="l nm"><b>${esc(p.pagina)}</b> <span class="pill">${p.tipo === 'pagina' ? 'página' : esc(p.funil)}</span>
+            <div class="tiny">${esc((p.url || '').replace(/^https?:\/\//, '').replace(/\/$/, '')) || 'sem URL'}</div></td>
+          <td>${n(p.visitantes)}<span class="mbar"><i style="width:${100 * p.visitantes / maxV}%"></i></span></td><td>${n(p.acessos)}</td></tr>`).join('')}
+        </tbody></table></div></div>
+      <div class="card chart"><div class="card-h"><h2>${sel ? esc(sel.pagina) : ''}</h2><span class="sp"></span><span class="tiny">pessoas por dia</span></div>
+        ${sel ? barras((sel.serie || []).map(d => ({x: fdia(d.dia), v: d.visitantes, tip: `${fdia(d.dia)}\n${n(d.visitantes)} pessoas · ${n(d.acessos)} acessos`})), '#7c5cff', 190) : ''}
+        ${sel && sel.serie && sel.serie.length === 1 ? '<p class="tiny" style="margin:8px 0 0">Escolha 7 ou 30 dias no topo pra ver a evolução.</p>' : ''}</div>
+    </div>` : `<div class="card empty"><b>Nenhuma página rastreada ainda</b>Crie uma página (ex.: a bio) e cole a linha no &lt;head&gt; dela.<br><br><button class="btn pri" id="novaPag2">＋ Nova página</button></div>`}
+    ${(r.links || []).map(l => {
+      const pg = pags.find(p => p.etapa_id === l.etapa_id) || {};
+      const base = Number(pg.visitantes || 0);
+      const mx = Math.max(1, ...(l.links || []).map(x => Number(x.pessoas)));
+      return `<div class="card mt"><div class="card-h"><h2>Cliques nos links: ${esc(l.pagina)}</h2><span class="sp"></span><span class="tiny">${n(base)} pessoas abriram a página</span></div>
+        ${(l.links || []).length ? `<div class="tbl"><table><thead><tr><th class="l">Link</th><th>Pessoas que clicaram</th><th>% de quem abriu</th><th>Cliques</th></tr></thead><tbody>
+        ${l.links.map(x => `<tr><td class="l nm"><b>${esc(x.texto || x.destino)}</b><div class="tiny">${esc(x.destino)}</div></td>
+          <td>${n(x.pessoas)}<span class="mbar"><i style="width:${100 * x.pessoas / mx}%"></i></span></td>
+          <td><span class="cv">${base ? pct(100 * x.pessoas / base) : '—'}</span></td><td>${n(x.cliques)}</td></tr>`).join('')}
+        </tbody></table></div>` : '<p class="muted" style="margin:0">Nenhum clique registrado no período.</p>'}</div>`;
+    }).join('')}
+    <div class="card mt"><div class="card-h"><h2>Origem do tráfego</h2>
+        <div class="seg" id="tcampo">${CAMPOS.map(c => `<button data-c="${c[0]}" class="${c[0] === st.trafCampo ? 'on' : ''}">${c[1]}</button>`).join('')}</div>
+        <span class="sp"></span>
+        <div class="seg" id="tmodo"><button data-m="ultima" class="${st.trafModo === 'ultima' ? 'on' : ''}" title="a UTM de cada acesso e da compra">UTM do acesso</button><button data-m="entrada" class="${st.trafModo === 'entrada' ? 'on' : ''}" title="a UTM do 1º acesso da pessoa">UTM de entrada</button></div></div>
+      ${(r.origens || []).length ? `<div class="tbl"><table><thead><tr><th class="l">${nomeCampo(st.trafCampo)}</th><th>Pessoas</th><th>Acessos</th><th>Vendas</th><th>Receita</th><th>Conversão</th></tr></thead><tbody>
+        ${r.origens.map(g => `<tr><td class="l nm" title="${esc(g.grupo)}"><b>${esc(limpa(g.grupo))}</b></td><td>${n(g.visitantes)}</td><td>${n(g.acessos)}</td>
+          <td><b>${n(g.vendas)}</b></td><td>${money(g.receita)}</td><td><span class="cv">${pct(g.conversao)}</span></td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="muted" style="margin:0">Nenhum acesso no período.</p>'}
+      <p class="tiny" style="margin:12px 0 0">${st.trafModo === 'entrada'
+        ? '<b>UTM de entrada</b>: cada pessoa conta pela origem do 1º acesso dela (por onde conheceu). As vendas também vão pra origem de entrada de quem comprou.'
+        : '<b>UTM do acesso</b>: cada acesso conta pela UTM que veio nele, e cada venda pela UTM da compra (a última).'} Vendas de todos os funis da operação.</p></div>`;
+  const nb = () => novaPagina(op); $('#novaPag').onclick = nb; const b2 = $('#novaPag2'); if (b2) b2.onclick = nb;
+  $$('tr[data-pag]').forEach(tr => tr.onclick = () => { st.trafPag = tr.dataset.pag; telaTrafego(op, true); });
+  $('#tcampo').onclick = e => { const c = e.target.dataset.c; if (c) { st.trafCampo = c; telaTrafego(op, true); } };
+  $('#tmodo').onclick = e => { const m = e.target.dataset.m; if (m) { st.trafModo = m; telaTrafego(op, true); } };
+  desenhaGraficos();
+}
+function novaPagina(op) {
+  const d = $('#dlg');
+  d.innerHTML = `<h2>Nova página</h2><form class="form" id="np">
+    <p class="tiny" style="margin:-8px 0 0">Uma página solta, fora dos funis (ex.: a bio do Instagram). Ela conta os acessos e, se quiser, os cliques em cada link.</p>
+    <label>Nome<input type="text" name="nome" required placeholder="ex.: Bio do Instagram"></label>
+    <label>URL da página<input type="url" name="url" placeholder="https://..."></label>
+    <label class="ck"><input type="checkbox" name="links" checked><span>Contar os cliques em cada link da página</span></label>
+    <div class="acts"><button type="button" class="btn ghost" id="cx">Cancelar</button><button class="btn pri">Criar e ver o código</button></div></form>`;
+  d.showModal(); $('#cx').onclick = () => d.close();
+  $('#np').onsubmit = async ev => {
+    ev.preventDefault(); const fd = new FormData(ev.target);
+    try {
+      const r = await rpc('criar_funil', {operacao: op, nome: fd.get('nome'), tipo: 'pagina', etapas: [{nome: fd.get('nome'), url: fd.get('url'), conta_links: !!fd.get('links')}]});
       d.close(); cache.clear(); await recarregaIni(); location.hash = `#/f/${r.id}/config`;
     } catch (e) { toast(e.message, true); }
   };
