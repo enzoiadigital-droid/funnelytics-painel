@@ -154,6 +154,9 @@ tr:last-child td{border-bottom:0}
 th.l,td.l{text-align:left}
 td.nm{white-space:normal;min-width:180px;max-width:420px}
 tr.click{cursor:pointer} tr.click:hover td{background:var(--hover)}
+.origg{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;background:var(--card2)}
+.origg-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.origg-r{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;margin-top:10px}
 tr.bump td{padding-top:0;color:var(--tx2);font-size:13px}
 .cv{display:inline-block;min-width:56px;padding:2px 8px;border-radius:999px;background:var(--ac-soft);color:var(--ac-tx);font-weight:700;font-size:12.5px;text-align:center}
 .cv.top{background:var(--ok-soft);color:var(--ok)}
@@ -880,8 +883,9 @@ async function telaTrafego(op, silencioso) {
         <div class="seg" id="tcampo">${CAMPOS.map(c => `<button data-c="${c[0]}" class="${c[0] === st.trafCampo ? 'on' : ''}">${c[1]}</button>`).join('')}</div>
         <span class="sp"></span>
         <div class="seg" id="tmodo"><button data-m="ultima" class="${st.trafModo === 'ultima' ? 'on' : ''}" title="a UTM de cada acesso e da compra">UTM do acesso</button><button data-m="entrada" class="${st.trafModo === 'entrada' ? 'on' : ''}" title="a UTM do 1º acesso da pessoa">UTM de entrada</button></div></div>
-      ${(r.origens || []).length ? `<div class="tbl"><table><thead><tr><th class="l">${nomeCampo(st.trafCampo)}</th><th>Pessoas</th><th>Acessos</th><th>Vendas</th><th>Receita</th><th>Conversão</th></tr></thead><tbody>
-        ${r.origens.map(g => `<tr><td class="l nm" title="${esc(g.grupo)}"><b>${esc(limpa(g.grupo))}</b></td><td>${n(g.visitantes)}</td><td>${n(g.acessos)}</td>
+      ${(r.origens || []).length ? `<div id="origG" class="origg"></div>
+        <div class="tbl"><table><thead><tr><th class="l">${nomeCampo(st.trafCampo)}</th>${MET_ORIG.map(m => `<th class="s" data-met="${m[0]}" title="ver o gráfico de ${m[1].toLowerCase()} por dia">${m[1]}</th>`).join('')}<th>Receita</th><th>Conversão</th></tr></thead><tbody>
+        ${r.origens.map(g => `<tr class="click" data-or="${esc(g.grupo)}"><td class="l nm" title="${esc(g.grupo)}"><b>${esc(limpa(g.grupo))}</b></td><td>${n(g.visitantes)}</td><td>${n(g.acessos)}</td>
           <td><b>${n(g.vendas)}</b></td><td>${money(g.receita)}</td><td><span class="cv">${pct(g.conversao)}</span></td></tr>`).join('')}
       </tbody></table></div>` : '<p class="muted" style="margin:0">Nenhum acesso no período.</p>'}
       <p class="tiny" style="margin:12px 0 0">${st.trafModo === 'entrada'
@@ -891,7 +895,47 @@ async function telaTrafego(op, silencioso) {
   $$('tr[data-pag]').forEach(tr => tr.onclick = () => { st.trafPag = tr.dataset.pag; telaTrafego(op, true); });
   $('#tcampo').onclick = e => { const c = e.target.dataset.c; if (c) { st.trafCampo = c; telaTrafego(op, true); } };
   $('#tmodo').onclick = e => { const m = e.target.dataset.m; if (m) { st.trafModo = m; telaTrafego(op, true); } };
+  $$('tr[data-or]').forEach(tr => tr.onclick = () => { st.trafOrig = tr.dataset.or; graficoOrigem(r); });
+  $$('th[data-met]').forEach(th => th.onclick = () => { st.trafMet = th.dataset.met; graficoOrigem(r); });
+  graficoOrigem(r, true);
   desenhaGraficos();
+}
+// Gráfico da origem escolhida na tabela "Origem do tráfego": pessoas, acessos ou vendas por dia
+const MET_ORIG = [['visitantes', 'Pessoas', '#7c5cff'], ['acessos', 'Acessos', '#22d3ee'], ['vendas', 'Vendas', '#34d399']];
+function graficoOrigem(r, semDesenhar) {
+  const box = $('#origG'); if (!box) return;
+  const ors = r.origens || [];
+  if (!ors.some(g => g.grupo === st.trafOrig)) st.trafOrig = (ors[0] || {}).grupo;
+  st.trafMet = MET_ORIG.some(m => m[0] === st.trafMet) ? st.trafMet : 'visitantes';
+  const met = MET_ORIG.find(m => m[0] === st.trafMet), nomeM = met[1].toLowerCase();
+  const serie = ((r.origens_dia || {})[st.trafOrig] || []).map(d => ({...d, v: Number(d[met[0]] || 0)}));
+  $$('tr[data-or]').forEach(tr => tr.style.background = tr.dataset.or === st.trafOrig ? 'var(--ac-soft)' : '');
+  $$('th[data-met]').forEach(th => th.classList.toggle('on', th.dataset.met === st.trafMet));
+  // total: pessoas = únicas no período (igual à tabela; a soma dos dias contaria duas vezes quem voltou)
+  const linha = ors.find(g => g.grupo === st.trafOrig) || {};
+  const tot = met[0] === 'visitantes' ? Number(linha.visitantes || 0) : serie.reduce((a, d) => a + d.v, 0);
+  const somaDias = serie.reduce((a, d) => a + d.v, 0);
+  const melhor = serie.reduce((b, d) => (d.v > (b ? b.v : -1) ? d : b), null);
+  // tendência: últimos dias contra os dias logo antes (até 7 contra 7), sem os dias de antes de começar a ter dado
+  const i0 = serie.findIndex(d => d.v > 0), viva = i0 < 0 ? [] : serie.slice(i0);
+  const k = Math.min(7, Math.floor(viva.length / 2));
+  let tend = '';
+  if (k >= 2) {
+    const ult = viva.slice(-k).reduce((a, d) => a + d.v, 0), ant = viva.slice(-2 * k, -k).reduce((a, d) => a + d.v, 0);
+    tend = `<span class="tiny">últimos ${k} dias vs ${k} antes</span> ${delta(ult, ant) || '<span class="dl eq">—</span>'}`;
+  }
+  const tip = d => `${fdia(d.dia)}\n${n(d.visitantes)} pessoas · ${n(d.acessos)} acessos · ${n(d.vendas)} venda(s)`;
+  box.innerHTML = `<div class="origg-h"><div><b>${esc(limpa(st.trafOrig || ''))}</b> <span class="tiny">· ${nomeM} por dia</span></div><span class="sp"></span>
+      <div class="seg" id="tmet">${MET_ORIG.map(m => `<button data-met="${m[0]}" class="${m[0] === st.trafMet ? 'on' : ''}">${m[1]}</button>`).join('')}</div></div>
+    ${serie.length ? barras(serie.map(d => ({x: fdia(d.dia), v: d.v, tip: tip(d)})), met[2], 170) : '<p class="muted">Sem dados.</p>'}
+    <div class="origg-r"><span><b class="num">${n(tot)}</b> <span class="tiny">${nomeM} no período</span></span>
+      ${viva.length > 1 ? `<span><b class="num">${(somaDias / viva.length).toLocaleString('pt-BR', {maximumFractionDigits: 1})}</b> <span class="tiny">por dia${viva.length < serie.length ? ` (desde ${fdia(viva[0].dia)})` : ''}</span></span>` : ''}
+      ${melhor && melhor.v > 0 && serie.length > 1 ? `<span class="tiny">melhor dia: <b>${fdia(melhor.dia)}</b> (${n(melhor.v)})</span>` : ''}
+      ${tend ? `<span>${tend}</span>` : ''}
+      ${serie.length === 1 ? '<span class="tiny">Escolha 7 ou 30 dias no topo pra ver a evolução.</span>' : ''}
+      <span class="sp"></span><span class="tiny">clique numa linha da tabela pra trocar a origem</span></div>`;
+  $('#tmet').onclick = e => { const m = e.target.dataset.met; if (m) { st.trafMet = m; graficoOrigem(r); } };
+  if (!semDesenhar) desenhaGraficos();
 }
 function novaPagina(op) {
   const d = $('#dlg');
