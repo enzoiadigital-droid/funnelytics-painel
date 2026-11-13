@@ -154,6 +154,9 @@ tr:last-child td{border-bottom:0}
 th.l,td.l{text-align:left}
 td.nm{white-space:normal;min-width:180px;max-width:420px}
 tr.click{cursor:pointer} tr.click:hover td{background:var(--hover)}
+.aviso-esp{margin:18px 24px 0;max-width:1232px;padding:11px 14px;border-radius:12px;background:var(--warn-soft);color:var(--warn);border:1px solid rgba(251,191,36,.3);font-size:13.5px;line-height:1.45}
+.aviso-esp b{color:#fde68a}
+@media (max-width:760px){.aviso-esp{margin:12px 16px 0}}
 .origg{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;background:var(--card2)}
 .origg-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .origg-r{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;margin-top:10px}
@@ -354,6 +357,7 @@ function moldura() {
         <span class="atual" id="atual"></span>
         <button class="icbtn" id="ref" title="Atualizar">${IC_REF}</button>
       </div>
+      <div id="aviso"></div>
       <div class="content" id="app"></div>
     </div></div>`;
   $('#seg').onclick = e => { const p = e.target.dataset.p; if (!p) return; st.per = p; ls.set('fy_per', p); aplicaPer(); syncPer(); rota(); };
@@ -401,7 +405,21 @@ async function iniciar() {
   catch (e) { if (e.message !== 'chave') $('#raiz').innerHTML = `<div class="login"><div class="card erro">${esc(e.message)}<br><br><button class="btn" onclick="iniciar()">Tentar de novo</button></div></div>`; return; }
   aplicaPer(); moldura(); rota();
 }
-async function recarregaIni() { INI = await rpc('inicio'); lateral(); }
+async function recarregaIni() { INI = await rpc('inicio'); lateral(); avisoEspaco(); }
+// Faixa no topo quando o banco passa de 300 MB (plano free do Supabase = 500 MB)
+let ESPACO_T = 0;
+async function avisoEspaco() {
+  if (Date.now() - ESPACO_T < 30 * 60e3) return;   // confere no máximo a cada 30 min
+  ESPACO_T = Date.now();
+  try {
+    const e = await post('painel_espaco', {p_chave: CHAVE}), box = $('#aviso');
+    if (!box) return;
+    if (e.mb < e.aviso_mb) { box.innerHTML = ''; return; }
+    const dias = e.mb_por_dia > 0 ? Math.max(0, Math.floor((e.limite_mb - e.mb) / e.mb_por_dia)) : null;
+    box.innerHTML = `<div class="aviso-esp"><b>Banco com ${n(Math.round(e.mb))} MB de ${e.limite_mb} MB</b> (plano free do Supabase).
+      ${dias !== null ? `No ritmo atual enche em uns <b>${n(dias)} dias</b>.` : ''} Hora de resumir os dados antigos ou subir de plano: peça ao Claude no chat.</div>`;
+  } catch (_) { /* aviso é opcional: sem ele o painel segue normal */ }
+}
 
 async function atualizar(forcar) {
   if (forcar) { cache.clear(); $('#ref').classList.add('spin'); }
