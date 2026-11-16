@@ -558,10 +558,10 @@ function cardVsl(vsls) {
       {nome: 'Clicaram no botão', v: Number(t.clicaram || 0)}] : [];
     const final = t ? {nome: 'Conversões', sub: money(t.receita), v: Number(t.conversoes || 0)} : null;
     const fy = `<div class="kpis" style="grid-template-columns:repeat(3,1fr);margin:14px 0 0">
-        ${kpi('Clicaram no botão e foram pra página', n(v.clicaram), `<span>em média aos ${mmss(v.segundo_medio)} do vídeo</span>`)}
-        ${kpi('Desses, compraram', n(v.vendas), `<span>${money(v.receita)}</span>`)}
-        ${kpi('Conversão do clique', pct(v.conversao), `<span>${n(v.vendas)} de ${n(v.clicaram)} que clicaram</span>`, true)}</div>
-      <p class="tiny" style="margin:8px 0 0">Esses três são do Funnelytics (só deste funil, desde que o script entrou). O funil acima é do VTurb e soma todas as origens onde a VSL roda.</p>`;
+        ${kpi('Clicaram no botão da VSL', n(v.clicaram), `<span>${v.segundo_medio != null ? `em média aos ${mmss(v.segundo_medio)} do vídeo` : 'pessoas únicas'}</span>`)}
+        ${kpi('Compraram', n(v.vendas), `<span>${money(v.receita)}</span>`)}
+        ${kpi('Conversão do clique', v.clicaram ? pct(v.conversao) : '—', `<span>${n(v.vendas)} de ${n(v.clicaram)} que clicaram</span>`, true)}</div>
+      <p class="tiny" style="margin:8px 0 0">Esses três são do Funnelytics (só deste funil, desde que o script entrou). VSL dentro da página (teste A/B): a venda é ligada à versão pelo cupom do botão dela. O funil acima é do VTurb e soma todas as origens onde a VSL roda.</p>`;
     // curva de retenção: quantos ainda assistiam em cada bloco de 5 s
     let curva = '';
     if (t && t.saidas && t.saidas.length) {
