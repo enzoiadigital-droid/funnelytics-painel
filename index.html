@@ -549,7 +549,7 @@ async function telaFunil(id, aba, silencioso) {
 const mmss = s => s == null ? '—' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 // Pacotes: funil com mais de uma oferta (básico, upsell do básico, premium). Pacote = oferta + cupom.
 function cardPacotes(rows) {
-  rows = (rows || []).filter(p => Number(p.vendas) || Number(p.clicaram));
+  rows = rows || [];   // inclui os pacotes cadastrados em pacotes_nomes, mesmo zerados (card aparece desde o 1º dia)
   if (rows.length < 2) return '';
   const ORD = {basico: 1, upsell: 2, premium: 3}, PAPEL = {basico: 'básico', upsell: 'upsell do básico', premium: 'premium'};
   rows = [...rows].sort((a, b) => (ORD[a.papel] || 9) - (ORD[b.papel] || 9) || Number(a.preco || 0) - Number(b.preco || 0));
@@ -559,7 +559,7 @@ function cardPacotes(rows) {
   const maxP = Math.max(1, ...rows.map(p => Number(p.pct_compradores || 0)));
   const desde = rows.find(p => p.cliques_desde)?.cliques_desde;
   const kp = [
-    ...(rows.some(p => p.papel === 'upsell') ? [kpi('Aceitaram o upsell', u ? pct(100 * u / (b + u)) : '0%', `<span>${n(u)} de ${n(b + u)} que foram no básico</span>`, true)] : []),
+    ...(rows.some(p => p.papel === 'upsell') ? [kpi('Aceitaram o upsell', b + u ? pct(100 * u / (b + u)) : '—', `<span>${n(u)} de ${n(b + u)} que foram no básico</span>`, true)] : []),
     kpi('Pegaram o premium', pct(tot ? 100 * pr / tot : null), `<span>${n(pr)} de ${n(tot)} compradores</span>`),
     kpi('Ticket médio', money(tot ? rec / tot : 0), `<span>${money(rec)} nos pacotes</span>`)];
   return `<div class="card mt"><div class="card-h"><h2>Pacotes</h2><span class="sp"></span><span class="tiny">qual pacote as pessoas compram</span></div>
