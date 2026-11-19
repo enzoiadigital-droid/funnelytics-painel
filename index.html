@@ -547,6 +547,31 @@ async function telaFunil(id, aba, silencioso) {
 }
 
 const mmss = s => s == null ? '—' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+// Pacotes: funil com mais de uma oferta (básico, upsell do básico, premium). Pacote = oferta + cupom.
+function cardPacotes(rows) {
+  rows = (rows || []).filter(p => Number(p.vendas) || Number(p.clicaram));
+  if (rows.length < 2) return '';
+  const ORD = {basico: 1, upsell: 2, premium: 3}, PAPEL = {basico: 'básico', upsell: 'upsell do básico', premium: 'premium'};
+  rows = [...rows].sort((a, b) => (ORD[a.papel] || 9) - (ORD[b.papel] || 9) || Number(a.preco || 0) - Number(b.preco || 0));
+  const tot = rows.reduce((s, p) => s + Number(p.vendas), 0), rec = rows.reduce((s, p) => s + Number(p.receita), 0);
+  const soma = papel => rows.filter(p => p.papel === papel).reduce((s, p) => s + Number(p.vendas), 0);
+  const b = soma('basico'), u = soma('upsell'), pr = soma('premium');
+  const maxP = Math.max(1, ...rows.map(p => Number(p.pct_compradores || 0)));
+  const desde = rows.find(p => p.cliques_desde)?.cliques_desde;
+  const kp = [
+    ...(b + u ? [kpi('Aceitaram o upsell', u ? pct(100 * u / (b + u)) : '0%', `<span>${n(u)} de ${n(b + u)} que foram no básico</span>`, true)] : []),
+    kpi('Pegaram o premium', pct(tot ? 100 * pr / tot : null), `<span>${n(pr)} de ${n(tot)} compradores</span>`),
+    kpi('Ticket médio', money(tot ? rec / tot : 0), `<span>${money(rec)} nos pacotes</span>`)];
+  return `<div class="card mt"><div class="card-h"><h2>Pacotes</h2><span class="sp"></span><span class="tiny">qual pacote as pessoas compram</span></div>
+    <div class="kpis" style="grid-template-columns:repeat(${kp.length},1fr);margin:0 0 14px">${kp.join('')}</div>
+    <div class="tbl"><table><thead><tr><th class="l">Pacote</th><th>Preço</th><th>Vendas</th><th>% dos compradores</th><th>Conversão</th><th>Clicaram</th><th>Clique → compra</th><th>Receita</th></tr></thead><tbody>
+      ${rows.map(p => `<tr><td class="l nm" title="${esc(p.chave)}"><b>${esc(p.pacote)}</b>${p.papel ? `<div class="tiny">${PAPEL[p.papel]}</div>` : ''}</td>
+        <td>${p.preco != null ? money(p.preco) : '—'}</td><td><b>${n(p.vendas)}</b></td>
+        <td>${pct(p.pct_compradores)}<span class="mbar"><i style="width:${100 * Number(p.pct_compradores || 0) / maxP}%"></i></span></td>
+        <td><span class="cv">${pct(p.conversao)}</span></td><td>${n(p.clicaram)}</td><td>${p.conv_clique != null ? pct(p.conv_clique) : '—'}</td><td>${money(p.receita)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="tiny" style="margin:12px 0 0">Aceitaram o upsell = compraram o upsell ÷ (básico + upsell), a taxa para comparar a roleta e outros testes. Conversão = vendas do pacote ÷ pessoas que passaram pelo funil. Clique → compra = vendas do pacote ÷ pessoas que clicaram no botão dele${desde ? `, contando desde ${new Date(desde).toLocaleDateString('pt-BR')} (quando o script começou a guardar a oferta do clique)` : ''}. Parcelas seguintes e order bumps não contam como venda; os bumps entram na receita do pacote.</p></div>`;
+}
 function cardVsl(vsls) {
   if (!vsls || !vsls.length) return '';
   return vsls.filter(v => v.vturb || v.clicaram).map(v => {
@@ -612,6 +637,7 @@ function abaResumo(f, r, passos, vsls) {
     ${(passos || []).filter(p => (p.passos || []).length).map(p => `<div class="card mt"><div class="card-h"><h2>Telas de “${esc(p.etapa)}”</h2><span class="sp"></span><span class="tiny">onde as pessoas saem, tela por tela</span></div>
       ${funilHtml(p.passos.map((x, i) => ({nome: `${i + 1}. ${i === p.passos.length - 1 && vslDoFunil(vsls) ? 'VSL' : x.passo}`, v: x.visitantes})), null, true)}
       <p class="tiny" style="margin:12px 0 0">Tela sem título grande aparece como “Tela N” (nada do que a pessoa digita é guardado).</p></div>`).join('')}
+    ${cardPacotes(r.pacotes)}
     ${cardVsl(vsls)}
     <div class="grid g2e mt">
       <div class="card"><div class="card-h"><h2>Melhores por ${nomeCampo(r.campo).toLowerCase()}</h2><span class="sp"></span><a class="lk" href="#/f/${f.id}/origens">ver tudo</a></div>
