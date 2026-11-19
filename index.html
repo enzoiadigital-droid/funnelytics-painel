@@ -705,6 +705,8 @@ function tabelaBumps(rows) {
       <td><span class="cv">${pct(b.taxa)}</span></td><td>${money(b.receita)}</td></tr>`).join('')}
   </tbody></table></div><p class="tiny" style="margin:10px 0 0">Taxa = compras aprovadas que levaram o order bump. Ele não conta como venda, mas entra na receita e no ticket.</p>`;
 }
+// Parcelamento inteligente: a 2ª parcela em diante chega como transação nova; entra na receita, mas não é venda nova.
+const PARC = s => s.parcela > 1 ? `<div class="tiny">parcela ${s.parcela} de uma compra antiga (não conta como venda)</div>` : '';
 function tabelaVendas(rows, limite) {
   if (!rows.length) return '<p class="muted" style="margin:0">Nenhuma venda no período.</p>';
   let lista = rows;
@@ -713,7 +715,7 @@ function tabelaVendas(rows, limite) {
     ${lista.map(s => s.order_bump
       ? `<tr class="bump"><td></td><td></td><td class="l">↳ ${esc(s.produto_nome || '—')} <span class="tiny">order bump</span></td><td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td><td></td><td>${money(s.valor)}</td></tr>`
       : `<tr><td class="l">${quando(s.comprada_em)}</td><td class="l nm">${esc(s.comprador_nome || '—')}<div class="tiny">${esc(s.comprador_email || '')}</div></td>
-        <td class="l">${esc(s.produto_nome || '—')}</td><td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td>
+        <td class="l">${esc(s.produto_nome || '—')}${PARC(s)}</td><td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td>
         <td class="l nm" title="${esc([s.utm_source, s.utm_campaign, s.utm_content].filter(Boolean).join(' / '))}">${esc([s.utm_source, limpa(s.utm_content || s.utm_campaign)].filter(Boolean).join(' · ') || '—')}<div class="tiny">${s.etapa ? esc(s.etapa) + ' · ' : ''}via ${ATR[s.atribuicao] || '—'}</div></td>
         <td><b>${money(s.valor)}</b></td></tr>`).join('')}
   </tbody></table></div>`;
@@ -744,8 +746,9 @@ function abaOrigens(f, r) {
 function abaVendas(f, r) {
   const grupos = {todas: () => true, aprovada: s => s.status === 'aprovada', reemb: s => ['reembolsada', 'chargeback', 'disputa'].includes(s.status), pend: s => ['aguardando', 'atrasada', 'cancelada', 'expirada'].includes(s.status)};
   const nomes = [['todas', 'Todas'], ['aprovada', 'Aprovadas'], ['reemb', 'Reembolsos'], ['pend', 'Pendentes / canceladas']];
-  const princ = r.ultimas_vendas.filter(s => !s.order_bump);
-  const ped = new Set(princ.filter(grupos[st.statusV]).map(s => s.pedido));
+  const todas = r.ultimas_vendas.filter(s => !s.order_bump);
+  const princ = todas.filter(s => !(s.parcela > 1));
+  const ped = new Set(todas.filter(grupos[st.statusV]).map(s => s.pedido));
   const lista = r.ultimas_vendas.filter(s => ped.has(s.pedido));
   $('#aba').innerHTML = `<div class="card"><div class="card-h"><h2>Vendas</h2>
       <div class="seg" id="sv">${nomes.map(x => `<button data-s="${x[0]}" class="${st.statusV === x[0] ? 'on' : ''}">${x[1]} <span class="tiny">${princ.filter(grupos[x[0]]).length}</span></button>`).join('')}</div></div>
@@ -1004,12 +1007,12 @@ async function telaHotmart() {
         <div class="step"><b>4</b><div>Coprodução: cadastre a mesma URL na conta de cada expert. A mesma venda não conta duas vezes.</div></div>
       </div>
     </div>
-    <div class="card mt"><div class="card-h"><h2>Vendas sem funil</h2><span class="pill ${semF.length ? 'warn' : 'ok'}">${semF.filter(s => !s.order_bump).length}</span></div>
+    <div class="card mt"><div class="card-h"><h2>Vendas sem funil</h2><span class="pill ${semF.length ? 'warn' : 'ok'}">${semF.filter(s => !s.order_bump && !(s.parcela > 1)).length}</span></div>
       ${semF.length ? `<p class="tiny" style="margin:-6px 0 10px">Vieram de páginas sem o script do Funnelytics. A origem é o que a Utmify mandou.</p>
       <div class="tbl"><table><thead><tr><th class="l">Quando</th><th class="l">Produto</th><th class="l">Comprador</th><th class="l">Status</th><th class="l">Origem</th><th>Valor</th></tr></thead><tbody>
       ${semF.map(s => s.order_bump
         ? `<tr class="bump"><td></td><td class="l">↳ ${esc(s.produto_nome || '—')} <span class="tiny">order bump</span></td><td></td><td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td><td></td><td>${money(s.valor)}</td></tr>`
-        : `<tr><td class="l">${quando(s.comprada_em)}</td><td class="l">${esc(s.produto_nome || '—')}<div class="tiny">produto ${esc(s.produto_id || '')}</div></td><td class="l">${esc(s.comprador_nome || '—')}</td>
+        : `<tr><td class="l">${quando(s.comprada_em)}</td><td class="l">${esc(s.produto_nome || '—')}<div class="tiny">produto ${esc(s.produto_id || '')}</div>${PARC(s)}</td><td class="l">${esc(s.comprador_nome || '—')}</td>
           <td class="l"><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></td><td class="l">${esc(s.utm_source || '—')}</td><td><b>${money(s.valor)}</b></td></tr>`).join('')}
       </tbody></table></div>` : '<p class="muted" style="margin:0">Nenhuma. Todas as vendas estão ligadas a um funil.</p>'}
     </div>`;
