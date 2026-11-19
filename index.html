@@ -559,7 +559,7 @@ function cardPacotes(rows) {
   const maxP = Math.max(1, ...rows.map(p => Number(p.pct_compradores || 0)));
   const desde = rows.find(p => p.cliques_desde)?.cliques_desde;
   const kp = [
-    ...(b + u ? [kpi('Aceitaram o upsell', u ? pct(100 * u / (b + u)) : '0%', `<span>${n(u)} de ${n(b + u)} que foram no básico</span>`, true)] : []),
+    ...(rows.some(p => p.papel === 'upsell') ? [kpi('Aceitaram o upsell', u ? pct(100 * u / (b + u)) : '0%', `<span>${n(u)} de ${n(b + u)} que foram no básico</span>`, true)] : []),
     kpi('Pegaram o premium', pct(tot ? 100 * pr / tot : null), `<span>${n(pr)} de ${n(tot)} compradores</span>`),
     kpi('Ticket médio', money(tot ? rec / tot : 0), `<span>${money(rec)} nos pacotes</span>`)];
   return `<div class="card mt"><div class="card-h"><h2>Pacotes</h2><span class="sp"></span><span class="tiny">qual pacote as pessoas compram</span></div>
